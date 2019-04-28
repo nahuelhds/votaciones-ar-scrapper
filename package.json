@@ -11,7 +11,8 @@
     "prestart": "npm run build",
     "start": "node dist/index.js",
     "predev": "npm run build",
-    "dev": "NODE_ENV=development node --inspect-brk=5858 dist/index.js"
+    "dev": "NODE_ENV=development node --inspect-brk=5858 dist/index.js",
+    "watch": "NODE_ENV=development node dist/index.js"
   },
   "dependencies": {
     "dotenv": "^7.0.0",
