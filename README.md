@@ -106,7 +106,7 @@ Se puede indicar que sólo se envíe la información de determinadas votaciones 
 Por ejemplo: `npm start importar 1994 3617 3618 3619` sólo enviará las votaciones de 1994
 con ID 3617, 3618 y 3619.
 
-# ¿Querés **ver** al bot en acción?
+# ¿Querés ver al bot en acción?
 
 Para ver cómo se inicia el navegador y el bot realiza acción por acción, podés ejecutar el comando en modo de desarrollo
 reemplazando `npm start` por `npm run watch` al inicio de cada método.
