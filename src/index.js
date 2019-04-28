@@ -24,10 +24,10 @@ yargs
     handler: argv => parseVotingsDetailsFromYear(argv.anio)
   })
   .command({
-    command: "importar <anio> [onlyTheseVotings..]",
+    command: "importar <anio> [soloEstasVotaciones..]",
     desc: "Importa todo lo descargado para el <anio> en el API",
     builder: yargs => yargs.default("anio", defaultYear),
-    handler: argv => sendYear(argv.anio, argv.onlyTheseVotings)
+    handler: argv => sendYear(argv.anio, argv.soloEstasVotaciones)
   })
   .demandCommand()
   .help()

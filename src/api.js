@@ -46,7 +46,9 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
 
         const voting = await votingResponse.json();
         if (SAVE_RECORDS) {
-          const recordsEndpoint = `${API_ENDPOINT}/voting/${voting.id}/records`;
+          const recordsEndpoint = `${API_ENDPOINT}/votings/${
+            voting.id
+          }/records`;
           const recordsResponse = await post(
             recordsEndpoint,
             originalVoting.records
@@ -68,7 +70,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
         }
 
         if (SAVE_VOTES) {
-          const votesEndpoint = `${API_ENDPOINT}/voting/${voting.id}/votes`;
+          const votesEndpoint = `${API_ENDPOINT}/votings/${voting.id}/votes`;
           const votesResponse = await post(
             votesEndpoint,
             getContentFromFileInFolder(`diputados/votes/${originalVoting.id}`)
