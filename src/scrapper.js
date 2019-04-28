@@ -238,7 +238,7 @@ export default class Scrapper {
       voting.absentCount = await absentCountProp.jsonValue();
       console.info("Ausentes\t\t", voting.absentCount);
 
-      this.downloadVotesCsvFromPage(page, downloadRelativePath);
+      await this.downloadVotesCsvFromPage(page, downloadRelativePath);
     } catch (err) {
       console.info(err);
     } finally {

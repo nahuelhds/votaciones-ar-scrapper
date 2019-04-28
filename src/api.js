@@ -1,7 +1,7 @@
 import { post } from "./http";
 import { getContentFromFileInFolder, getDataFromFile } from "./fs";
 
-const API_ENDPOINT = "api/import/ar/deputies";
+const API_ENDPOINT = process.env.API_ENDPOINT_DIPUTADOS;
 
 const SAVE_RECORDS = true;
 const SAVE_VOTES = true;
@@ -17,7 +17,7 @@ const SAVE_VOTES = true;
  * @param {array} onlyTheseVotings
  */
 export const sendYear = async (year, onlyTheseVotings = []) => {
-  const votings = getDataFromFile(`ar/deputies/${year}.json`);
+  const votings = getDataFromFile(`diputados/${year}.json`);
   for (let originalVoting of votings) {
     if (
       ["AFIRMATIVO", "NEGATIVO", "EMPATE"].indexOf(originalVoting.result) > -1
@@ -71,7 +71,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           const votesEndpoint = `${API_ENDPOINT}/voting/${voting.id}/votes`;
           const votesResponse = await post(
             votesEndpoint,
-            getContentFromFileInFolder(`ar/deputies/votes/${originalVoting.id}`)
+            getContentFromFileInFolder(`diputados/votes/${originalVoting.id}`)
           );
           console.info(
             votesResponse.status,

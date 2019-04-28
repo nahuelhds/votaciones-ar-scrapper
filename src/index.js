@@ -11,21 +11,21 @@ const defaultYear = now.getFullYear();
 
 yargs
   .command({
-    command: "votaciones <anio>",
+    command: "listado <anio>",
     desc: "Descarga el listado de votaciones del <anio> indicado",
     builder: yargs => yargs.default("anio", defaultYear),
     handler: argv => parseVotingsFromYear(argv.anio)
   })
   .command({
-    command: "votos <anio>",
+    command: "detalles <anio>",
     desc:
-      "Descarga los archivos CSV de cada votación realizada durante el <anio> indicado",
+      "Descarga los detalles y archivos CSV de cada votación realizada durante el <anio> indicado",
     builder: yargs => yargs.default("anio", defaultYear),
     handler: argv => parseVotingsDetailsFromYear(argv.anio)
   })
   .command({
     command: "importar <anio> [onlyTheseVotings..]",
-    desc: "Import the downloaded information to the API",
+    desc: "Importa todo lo descargado para el <anio> en el API",
     builder: yargs => yargs.default("anio", defaultYear),
     handler: argv => sendYear(argv.anio, argv.onlyTheseVotings)
   })
@@ -39,7 +39,7 @@ async function parseVotingsFromYear(year) {
     await scrapper.start();
     try {
       const votings = await scrapper.parseVotingsFromYear(year);
-      const path = await persistData("diputados/", `${year}.json`, votings);
+      const path = await persistData("diputados", `${year}.json`, votings);
       console.info("Votaciones guardadas. Archivo:", path);
     } catch (err) {
       console.error(err);
@@ -72,7 +72,7 @@ async function parseVotingsDetailsFromYear(year) {
       }
 
       const path = await persistData(
-        "diputados/",
+        "diputados",
         `${year}.json`,
         editedVotings
       );
