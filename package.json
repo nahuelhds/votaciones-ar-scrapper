@@ -8,8 +8,8 @@
   "scripts": {
     "eslint": "eslint --ext .js --fix --ignore-path .gitignore .",
     "prestart": "npm run build",
-    "start": "npm run ./src/index.js",
-    "dev": "npm run --inspect-brk=5858 ./src/index.js"
+    "start": "node src/index.js",
+    "dev": "NODE_ENV=development node --inspect-brk=5858 src/index.js"
   },
   "dependencies": {
     "dotenv": "^7.0.0",
