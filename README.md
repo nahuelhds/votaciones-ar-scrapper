@@ -28,21 +28,23 @@ Ejemplo de contenido de un archivo generado con este método:
 [
   //...
   {
-    "id": "3617",
-    "date": "788072220",
-    "title": "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General",
-    "type": "Votación Nominal",
-    "result": "AFIRMATIVO",
-    "url": "/votacion/3617",
-    "records": [
+    id: "3617",
+    date: "788072220",
+    title:
+      "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General",
+    type: "Votación Nominal",
+    result: "AFIRMATIVO",
+    url: "/votacion/3617",
+    records: [
       {
-        "id": "158-S-1994",
-        "title": "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General "
+        id: "158-S-1994",
+        title:
+          "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General "
       }
     ]
-  },
+  }
   //...
-]
+];
 ```
 
 ## Completar los detalles de cada votación descargada
@@ -51,8 +53,8 @@ Ejemplo de contenido de un archivo generado con este método:
 npm start detalles <año>
 ```
 
-A partir del archivo descargado con el método anterior, generado en `./datos/diputados/<año>.json`, ingresa a la página 
-individual de cada una de esas votaciones y toma los detalles particulares de las mismas, así como también descarga el archivo CSV con los votos nominales de los legisladores.
+A partir del archivo descargado con el método anterior, generado en `./datos/diputados/<año>.json`, ingresa a la página
+individual de cada una de esas votaciones y toma los detalles particulares de las mismas, así como también descarga el archivo CSV con los votos nominales de los legisladores en la ruta `./datos/diputados/votos/<id>/<archivo>.csv`.
 
 Al finalizar el proceso, reemplazar el archivo original con todos los nuevos datos.
 
@@ -61,33 +63,37 @@ Siguiendo el ejemplo anterior, la votación descargada del listado, ahora tendr�
 ```js
 [
   //...
-  
+
   {
-    "id": "3617",
-    "date": "788072220",
-    "title": "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General",
-    "type": "Votación Nominal",
-    "result": "AFIRMATIVO",
-    "url": "/votacion/3617",
-    "records": [
+    id: "3617",
+    date: "788072220",
+    title:
+      "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General",
+    type: "Votación Nominal",
+    result: "AFIRMATIVO",
+    url: "/votacion/3617",
+    records: [
       {
-        "id": "158-S-1994",
-        "title": "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General "
+        id: "158-S-1994",
+        title:
+          "Modificación al Régimen Electoral Nacional, elección de Presidente y Vicepresidente de la Nación, Senadores y Diputados Nacionales - En General "
       }
     ],
-    "period": 112,
-    "meeting": 43,
-    "record": 2,
-    "president": "ROMERO, Carlos Alberto",
-    "documentUrl": "https://votaciones.hcdn.gob.ar/proxy/pdf/1994/112PO03_02_R43.pdf",
-    "affirmativeCount": "139",
-    "negativeCount": "0",
-    "abstentionCount": "0",
-    "absentCount": "117"
-  },
+    period: 112,
+    meeting: 43,
+    record: 2,
+    president: "ROMERO, Carlos Alberto",
+    documentUrl:
+      "https://votaciones.hcdn.gob.ar/proxy/pdf/1994/112PO03_02_R43.pdf",
+    affirmativeCount: "139",
+    negativeCount: "0",
+    abstentionCount: "0",
+    absentCount: "117"
+  }
   //...
-]
+];
 ```
+
 ## Importar la información generada en el API
 
 ```sh
@@ -97,6 +103,7 @@ npm start importar <año> [soloEstasVotaciones..]
 Este método envía en varias peticiones POST la información generada para cada votación del año indicado. Como contrapartida,
 el API al que se envíe esta información debe contener tres endpoints preparados para recibir toda esta data. Los mismos
 deberían ser:
+
 - POST `votings` Creación de la votación
 - POST `votings/<id>/records` Creación de los expedientes de la votación
 - POST `votings/<id>/votes` Creación de los votos nominales de la votación
@@ -116,7 +123,7 @@ reemplazando `npm start` por `npm run watch` al inicio de cada método.
 Si te interesa debuggear o desarrollar otros métodos para scrappear contenido, recomiendo utilizar el comando
 `npm run dev` en vez de `npm start`.
 
-Este comando, requiere que tengas el IDE configurado con *auto-attach para Node*.
+Este comando, requiere que tengas el IDE configurado con _auto-attach para Node_.
 Si utilizás VSCode, este proyecto lo tiene activado por defecto.
 
 Más información: [https://code.visualstudio.com/blogs/2018/07/12/introducing-logpoints-and-auto-attach]()
