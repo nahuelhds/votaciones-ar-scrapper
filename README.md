@@ -54,7 +54,7 @@ npm start detalles <año>
 ```
 
 A partir del archivo descargado con el método anterior, generado en `./datos/diputados/<año>.json`, ingresa a la página
-individual de cada una de esas votaciones y toma los detalles particulares de las mismas, así como también descarga el archivo CSV con los votos nominales de los legisladores en la ruta `./datos/diputados/votos/<id>/<archivo>.csv`.
+individual de cada una de esas votaciones y toma los detalles particulares de las mismas, así como también descarga el archivo CSV con los votos nominales en la ruta `./datos/diputados/votos/<id>/<archivo>.csv`.
 
 Al finalizar el proceso, reemplazar el archivo original con todos los nuevos datos.
 
@@ -127,3 +127,14 @@ Este comando, requiere que tengas el IDE configurado con _auto-attach para Node_
 Si utilizás VSCode, este proyecto lo tiene activado por defecto.
 
 Más información: [https://code.visualstudio.com/blogs/2018/07/12/introducing-logpoints-and-auto-attach]()
+
+# Colaboraciones
+
+Si te interesa colaborar, contactate conmigo a través de [mi cuenta en Twitter](http://medium.com/@nahuelhds).
+
+# nahuelhds
+
+Segui mi actividad en:
+- Medium: [@nahuelhds](http://medium.com/@nahuelhds)
+- Twitter: [@nahuelhds](https://twitter.com/nahuelhds)
+
