@@ -1,10 +1,7 @@
-import { post } from '../../../service/http';
-import {
-  getContentFromFileInFolder,
-  getDataFromFile,
-} from '../../../service/fs';
+import { post } from "./http";
+import { getContentFromFileInFolder, getDataFromFile } from "./fs";
 
-const API_ENDPOINT = 'api/import/ar/deputies';
+const API_ENDPOINT = "api/import/ar/deputies";
 
 const SAVE_RECORDS = true;
 const SAVE_VOTES = true;
@@ -23,7 +20,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
   const votings = getDataFromFile(`ar/deputies/${year}.json`);
   for (let originalVoting of votings) {
     if (
-      ['AFIRMATIVO', 'NEGATIVO', 'EMPATE'].indexOf(originalVoting.result) > -1
+      ["AFIRMATIVO", "NEGATIVO", "EMPATE"].indexOf(originalVoting.result) > -1
     ) {
       if (
         onlyTheseVotings.length &&

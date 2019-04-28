@@ -11,22 +11,23 @@ const defaultYear = now.getFullYear();
 
 yargs
   .command({
-    command: "parse <year>",
-    desc: "Parse votings from year",
-    builder: yargs => yargs.default("year", defaultYear),
-    handler: argv => parseVotingsFromYear(argv.year)
+    command: "votaciones <anio>",
+    desc: "Descarga el listado de votaciones del <anio> indicado",
+    builder: yargs => yargs.default("anio", defaultYear),
+    handler: argv => parseVotingsFromYear(argv.anio)
   })
   .command({
-    command: "parse-details <year>",
-    desc: "Parse votings details from year",
-    builder: yargs => yargs.default("year", defaultYear),
-    handler: argv => parseVotingsDetailsFromYear(argv.year)
+    command: "votos <anio>",
+    desc:
+      "Descarga los archivos CSV de cada votación realizada durante el <anio> indicado",
+    builder: yargs => yargs.default("anio", defaultYear),
+    handler: argv => parseVotingsDetailsFromYear(argv.anio)
   })
   .command({
-    command: "send <year> [onlyTheseVotings..]",
-    desc: "Send votings to the API",
-    builder: yargs => yargs.default("year", defaultYear),
-    handler: argv => sendYear(argv.year, argv.onlyTheseVotings)
+    command: "importar <anio> [onlyTheseVotings..]",
+    desc: "Import the downloaded information to the API",
+    builder: yargs => yargs.default("anio", defaultYear),
+    handler: argv => sendYear(argv.anio, argv.onlyTheseVotings)
   })
   .demandCommand()
   .help()
@@ -38,7 +39,7 @@ async function parseVotingsFromYear(year) {
     await scrapper.start();
     try {
       const votings = await scrapper.parseVotingsFromYear(year);
-      const path = await persistData("ar/deputies/", `${year}.json`, votings);
+      const path = await persistData("diputados/", `${year}.json`, votings);
       console.info("Votaciones guardadas. Archivo:", path);
     } catch (err) {
       console.error(err);
@@ -57,21 +58,21 @@ async function parseVotingsDetailsFromYear(year) {
     console.info("INICIO ANALISIS DE VOTACIONES DEL AÑO", year);
     try {
       await scrapper.start();
-      const database = getDataFromFile(`ar/deputies/${year}.json`);
+      const database = getDataFromFile(`diputados/${year}.json`);
       const page = await scrapper.createPage();
       const editedVotings = [];
       for (let voting of database) {
         const editedVoting = await scrapper.parseVotingsDetails(
           page,
           voting,
-          `ar/deputies/votes/${voting.id}`
+          `diputados/votos/${voting.id}`
         );
 
         editedVotings.push(editedVoting);
       }
 
       const path = await persistData(
-        "ar/deputies/",
+        "diputados/",
         `${year}.json`,
         editedVotings
       );
