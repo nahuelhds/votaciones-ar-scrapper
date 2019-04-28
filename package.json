@@ -1,0 +1,26 @@
+{
+  "name": "votaciones-ar-scrapper",
+  "version": "1.0.0",
+  "description": "Scrapper que toma y descarga la información disponible en la web oficial de Diputados Argentina https://votaciones.hcdn.gob.ar/",
+  "main": "src/index.js",
+  "author": "Nahuel Sotelo",
+  "license": "GPL-3.0",
+  "scripts": {
+    "eslint": "eslint --ext .js --fix --ignore-path .gitignore .",
+    "prestart": "npm run build",
+    "start": "npm run ./src/index.js",
+    "dev": "npm run --inspect-brk=5858 ./src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^7.0.0",
+    "node-fetch": "^2.3.0",
+    "puppeteer": "^1.9.0",
+    "yargs": "^13.2.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.15.1",
+    "eslint-config-prettier": "^4.1.0",
+    "eslint-plugin-prettier": "^3.0.1",
+    "prettier": "^1.16.4"
+  }
+}
