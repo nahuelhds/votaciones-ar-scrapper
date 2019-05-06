@@ -130,7 +130,7 @@ Más información: [https://code.visualstudio.com/blogs/2018/07/12/introducing-l
 
 # Colaboraciones
 
-Si te interesa colaborar, contactate conmigo a través de [mi cuenta en Twitter](http://medium.com/@nahuelhds).
+Si te interesa colaborar, contactate conmigo a través de [mi cuenta en Twitter](https://twitter.com/nahuelhds).
 
 # nahuelhds
 
