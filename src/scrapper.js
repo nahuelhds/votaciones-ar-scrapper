@@ -7,7 +7,7 @@ import {
   getFilesFromFolder
 } from "./fs";
 
-const __DEV__ = process.env.NODE_ENV === "development";
+const __DEV__ = process.env.NODE_ENV !== "production";
 const VOTINGS_URI = "https://votaciones.hcdn.gob.ar";
 
 const PAGE_LOG = false;
