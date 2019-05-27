@@ -1,5 +1,8 @@
-import { post } from "./http";
-import { getContentFromFileInFolder, getDataFromFile } from "./fs";
+import { post } from "services/httpService.js";
+import {
+  getContentFromFileInFolder,
+  getDataFromFile
+} from "services/filesystemService.js";
 
 const API_ENDPOINT = process.env.API_ENDPOINT_DIPUTADOS;
 

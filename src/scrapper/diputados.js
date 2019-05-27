@@ -1,11 +1,10 @@
 import puppeteer from "puppeteer";
-
 import {
   DOWNLOAD_PATH,
+  getFilesFromFolder,
   dirExistsSync,
-  createDirRecursively,
-  getFilesFromFolder
-} from "./fs";
+  createDirRecursively
+} from "services/filesystemService";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 const VOTINGS_URI = "https://votaciones.hcdn.gob.ar";

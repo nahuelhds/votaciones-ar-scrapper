@@ -1,9 +1,8 @@
 import yargs from "yargs";
 
-import { getDataFromFile, persistData } from "./fs";
-
-import Scrapper from "./scrapper";
-import { sendYear } from "./api";
+import Scrapper from "scrapper/diputados";
+import { sendYear } from "api/diputados";
+import { getDataFromFile, persistData } from "services/filesystemService";
 
 const scrapper = new Scrapper();
 const now = new Date();
