@@ -8,6 +8,7 @@
   "scripts": {
     "eslint": "eslint --ext .js --fix --ignore-path .gitignore .",
     "build": "babel src --out-dir dist",
+    "prestart": "npm run eslint",
     "start": "nodemon --exec babel-node src/index.js --inspect-brk=5858",
     "serve": "node dist/index.js"
   },
