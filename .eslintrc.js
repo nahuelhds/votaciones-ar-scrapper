@@ -2,6 +2,9 @@ module.exports = {
   env: {
     node: true
   },
+  globals: {
+    Event: false // readonly
+  },
   parser: "babel-eslint",
   extends: [
     "eslint:recommended",
