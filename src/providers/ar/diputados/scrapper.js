@@ -1,10 +1,11 @@
 import puppeteer from "puppeteer";
+import logger from "services/logger";
 import {
   DOWNLOAD_PATH,
   getFilesFromFolder,
   dirExistsSync,
   createDirRecursively
-} from "services/filesystemService";
+} from "services/fs";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 const VOTINGS_URI = "https://votaciones.hcdn.gob.ar";
@@ -46,7 +47,7 @@ export default class Scrapper {
    */
   createPage = async () => {
     try {
-      console.info(`Abriendo nueva pestaña`);
+      logger.info(`Abriendo nueva pestaña`);
       const page = await this.browser.newPage();
       if (__DEV__ && PAGE_LOG) {
         page.on("console", msg => {
@@ -54,7 +55,7 @@ export default class Scrapper {
           if (text.indexOf("Failed to load resource") > -1) {
             return;
           }
-          console.log("PAGE LOG:", text);
+          logger.log("PAGE LOG:", text);
         });
       }
       return page;
@@ -67,18 +68,18 @@ export default class Scrapper {
    * Analiza las votaciones del año dado
    */
   parseVotingsFromYear = async year => {
-    console.info(`Abriendo pestaña`);
+    logger.info(`Abriendo pestaña`);
     const page = await this.createPage();
-    console.info(`Ingresando al sitio`, VOTINGS_URI);
+    logger.info(`Ingresando al sitio`, VOTINGS_URI);
     await page.goto(VOTINGS_URI, { waitUntil: "networkidle2" });
     try {
-      console.info(`Ingresando al año`, year);
+      logger.info(`Ingresando al año`, year);
       await this.gotoYear(page, year);
     } catch (err) {
       throw err;
     }
 
-    console.info(`Analizando votaciones...`);
+    logger.info(`Analizando votaciones...`);
 
     // Votaciones - Información general
     // 1. - Muestro todas las filas
@@ -115,12 +116,9 @@ export default class Scrapper {
         return voting;
       });
     });
-    console.info(
-      `Análisis de votaciones finalizada. Cantidad:`,
-      votings.length
-    );
+    logger.info(`Análisis de votaciones finalizada. Cantidad:`, votings.length);
 
-    console.info(`Analizando registros...`);
+    logger.info(`Analizando registros...`);
 
     for (const index in votings) {
       let voting = votings[index];
@@ -146,16 +144,16 @@ export default class Scrapper {
           })
         );
         voting.records = records;
-        console.warn(
+        logger.warn(
           `Registros de la votación #${voting.id}. Cantidad:`,
           records.length
         );
       } catch (error) {
-        console.warn(`Votación #${voting.id} no tiene registros`);
+        logger.warn(`Votación #${voting.id} no tiene registros`);
         voting.records = [];
       }
     }
-    console.info(`Análisis de registros finalizado`);
+    logger.info(`Análisis de registros finalizado`);
 
     await page.close();
     return votings;
@@ -168,14 +166,14 @@ export default class Scrapper {
   parseVotingsDetails = async (page, voting, downloadRelativePath) => {
     try {
       const pageUrl = `${VOTINGS_URI}${voting.url}`;
-      console.info(`\nINICIO VOTACION #${voting.id}`);
-      console.info(pageUrl);
+      logger.info(`\nINICIO VOTACION #${voting.id}`);
+      logger.info(pageUrl);
 
       await page.goto(pageUrl, {
         waitUntil: "networkidle2"
       });
 
-      console.info(`\nObteniendo datos...`);
+      logger.info(`\nObteniendo datos...`);
       const periodMeetingRecord = await page.$(
         `.container-fluid > div:first-child > div.row:first-child h5`
       );
@@ -189,20 +187,20 @@ export default class Scrapper {
       voting.meeting = parseInt(periodMeetingRecordArray[1].split(" ")[1]);
       voting.record = parseInt(periodMeetingRecordArray[2].split(" ")[1]);
 
-      console.info(periodMeetingRecordText);
+      logger.info(periodMeetingRecordText);
 
       const presidentElement = await page.$(`.white-box #custom-share h4 > b`);
       const presidentProp = await presidentElement.getProperty("textContent");
       voting.president = await presidentProp.jsonValue();
-      console.info("Presidente\t\t", voting.president);
+      logger.info("Presidente\t\t", voting.president);
 
       try {
         const documentUrl = await page.$(`.white-box div:nth-child(3) h5 a`);
         const documentUrlProp = await documentUrl.getProperty("href");
         voting.documentUrl = await documentUrlProp.jsonValue();
-        console.info("URL del documento\t", voting.documentUrl);
+        logger.info("URL del documento\t", voting.documentUrl);
       } catch (err) {
-        console.info("No se pudo obtener la URL del documento");
+        logger.info("No se pudo obtener la URL del documento");
       }
 
       const affirmativeCount = await page.$(
@@ -212,14 +210,14 @@ export default class Scrapper {
         "textContent"
       );
       voting.affirmativeCount = await affirmativeCountProp.jsonValue();
-      console.info("Votos afirmativos\t", voting.affirmativeCount);
+      logger.info("Votos afirmativos\t", voting.affirmativeCount);
 
       const negativeCount = await page.$(
         `.white-box div:nth-child(3) > div.row > div:nth-child(2) > ul > h3`
       );
       const negativeCountProp = await negativeCount.getProperty("textContent");
       voting.negativeCount = await negativeCountProp.jsonValue();
-      console.info("Votos negativos\t\t", voting.negativeCount);
+      logger.info("Votos negativos\t\t", voting.negativeCount);
 
       const abstentionCount = await page.$(
         `.white-box div:nth-child(3) > div.row > div:nth-child(3) > ul > h3`
@@ -228,20 +226,20 @@ export default class Scrapper {
         "textContent"
       );
       voting.abstentionCount = await abstentionCountProp.jsonValue();
-      console.info("Abstenciones\t\t", voting.abstentionCount);
+      logger.info("Abstenciones\t\t", voting.abstentionCount);
 
       const absentCount = await page.$(
         `.white-box div:nth-child(3) > div.row > div:nth-child(4) > ul > h3`
       );
       const absentCountProp = await absentCount.getProperty("textContent");
       voting.absentCount = await absentCountProp.jsonValue();
-      console.info("Ausentes\t\t", voting.absentCount);
+      logger.info("Ausentes\t\t", voting.absentCount);
 
       await this.downloadVotesCsvFromPage(page, downloadRelativePath);
     } catch (err) {
-      console.info(err);
+      logger.info(err);
     } finally {
-      console.info(`FIN VOTACION #${voting.id}\n`);
+      logger.info(`FIN VOTACION #${voting.id}\n`);
     }
 
     return voting;
@@ -259,7 +257,7 @@ export default class Scrapper {
       }
       createDirRecursively(downloadPath);
 
-      console.info(`Descargando archivo de votos...`);
+      logger.info(`Descargando archivo de votos...`);
 
       await page._client.send("Page.setDownloadBehavior", {
         behavior: "allow",
@@ -272,9 +270,9 @@ export default class Scrapper {
       await page.evaluate(el => {
         return el.click();
       }, csvButton);
-      console.info(`Archivo de votos descargado con éxito`);
+      logger.info(`Archivo de votos descargado con éxito`);
     } catch (error) {
-      console.info(error);
+      logger.info(error);
     }
 
     return downloadPath;

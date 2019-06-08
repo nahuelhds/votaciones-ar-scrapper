@@ -1,10 +1,10 @@
 import yargs from "yargs";
 
-import Scrapper from "scrapper/diputados";
-import { sendYear } from "api/diputados";
-import { getDataFromFile, persistData } from "services/filesystemService";
+import { getDataFromFile, persistData } from "services/fs";
+import diputados from "providers/ar/diputados";
+import logger from "services/logger";
 
-const scrapper = new Scrapper();
+const scrapper = new diputados.scrapper();
 const now = new Date();
 const defaultYear = now.getFullYear();
 
@@ -26,7 +26,7 @@ yargs
     command: "importar <anio> [soloEstasVotaciones..]",
     desc: "Importa todo lo descargado para el <anio> en el API",
     builder: yargs => yargs.default("anio", defaultYear),
-    handler: argv => sendYear(argv.anio, argv.soloEstasVotaciones)
+    handler: argv => diputados.api.sendYear(argv.anio, argv.soloEstasVotaciones)
   })
   .demandCommand()
   .help()
@@ -34,27 +34,27 @@ yargs
 
 async function parseVotingsFromYear(year) {
   try {
-    console.info("INICIO DEL ANALISIS DEL AÑO", year);
+    logger.log("INICIO DEL ANALISIS DEL AÑO", year);
     await scrapper.start();
     try {
       const votings = await scrapper.parseVotingsFromYear(year);
       const path = await persistData("diputados", `${year}.json`, votings);
-      console.info("Votaciones guardadas. Archivo:", path);
+      logger.info("Votaciones guardadas. Archivo:", path);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
   } catch (err) {
-    console.error("Ocurrió un error general durante el proceso", err);
+    logger.error("Ocurrió un error general durante el proceso", err);
   } finally {
     await scrapper.finish();
-    console.info("FIN DEL ANALISIS DEL AÑO", year);
+    logger.info("FIN DEL ANALISIS DEL AÑO", year);
     process.exit();
   }
 }
 
 async function parseVotingsDetailsFromYear(year) {
   try {
-    console.info("INICIO ANALISIS DE VOTACIONES DEL AÑO", year);
+    logger.info("INICIO ANALISIS DE VOTACIONES DEL AÑO", year);
     try {
       await scrapper.start();
       const database = getDataFromFile(`diputados/${year}.json`);
@@ -75,15 +75,15 @@ async function parseVotingsDetailsFromYear(year) {
         `${year}.json`,
         editedVotings
       );
-      console.info("Votaciones actualizadas. Archivo:", path);
+      logger.info("Votaciones actualizadas. Archivo:", path);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
   } catch (err) {
-    console.error(err);
+    logger.error(err);
   } finally {
     await scrapper.finish();
-    console.info("FIN ANALISIS DE VOTACIONES DEL AÑO", year);
+    logger.info("FIN ANALISIS DE VOTACIONES DEL AÑO", year);
     process.exit();
   }
 }

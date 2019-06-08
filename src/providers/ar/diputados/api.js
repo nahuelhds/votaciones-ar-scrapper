@@ -1,10 +1,8 @@
-import { post } from "services/httpService.js";
-import {
-  getContentFromFileInFolder,
-  getDataFromFile
-} from "services/filesystemService.js";
+import { post } from "services/http";
+import { getContentFromFileInFolder, getDataFromFile } from "services/fs";
+import logger from "services/logger";
 
-const API_ENDPOINT = process.env.API_ENDPOINT_DIPUTADOS;
+const API_ENDPOINT = "api/import/ar/deputies";
 
 const SAVE_RECORDS = true;
 const SAVE_VOTES = true;
@@ -34,7 +32,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
       try {
         const votingEndpoint = `${API_ENDPOINT}/voting`;
         const votingResponse = await post(votingEndpoint, originalVoting);
-        console.info(
+        logger.info(
           votingResponse.status,
           votingResponse.statusText,
           originalVoting.id,
@@ -56,7 +54,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
             recordsEndpoint,
             originalVoting.records
           );
-          console.info(
+          logger.info(
             recordsResponse.status,
             recordsResponse.statusText,
             originalVoting.id,
@@ -64,7 +62,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           );
 
           if (recordsResponse.status >= 400) {
-            console.warn(
+            logger.warn(
               `Falló la creación de los registros de la votación #${
                 originalVoting.id
               }`
@@ -78,7 +76,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
             votesEndpoint,
             getContentFromFileInFolder(`diputados/votes/${originalVoting.id}`)
           );
-          console.info(
+          logger.info(
             votesResponse.status,
             votesResponse.statusText,
             originalVoting.id,
@@ -86,7 +84,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           );
 
           if (votesResponse.status >= 400) {
-            console.warn(
+            logger.warn(
               `Falló el registro de las votaciones de la votación #${
                 originalVoting.id
               }`
@@ -94,10 +92,10 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           }
         }
       } catch (err) {
-        console.warn(err);
+        logger.warn(err);
       }
     } else {
-      console.error(
+      logger.error(
         `La votación #${originalVoting.id} no tiene un resultado esperado`,
         originalVoting.result
       );
