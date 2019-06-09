@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import logger from "services/logger";
+import logger, { pageConsoleLogger } from "services/logger";
 import {
   DOWNLOAD_PATH,
   getFilesFromFolder,
@@ -9,8 +9,6 @@ import {
 
 const __DEV__ = process.env.NODE_ENV !== "production";
 const VOTINGS_URI = "https://www.senado.gov.ar/votaciones/actas";
-
-const PAGE_LOG = false;
 
 let puppeteerConfig = {};
 if (__DEV__) {
@@ -49,15 +47,7 @@ export default class Scrapper {
     try {
       logger.info(`Abriendo nueva pestaña`);
       const page = await this.browser.newPage();
-      if (__DEV__ && PAGE_LOG) {
-        page.on("console", msg => {
-          const text = msg.text();
-          if (text.indexOf("Failed to load resource") > -1) {
-            return;
-          }
-          logger.log(`PAGE LOG: ${text}`);
-        });
-      }
+      page.on("console", pageConsoleLogger);
       return page;
     } catch (error) {
       throw `Ocurrió un error al crear una página. Error: ${error}`;
@@ -82,80 +72,95 @@ export default class Scrapper {
     logger.info(`Analizando votaciones...`);
 
     // Votaciones - Información general
-    // 1. - Muestro todas las filas
-    const rowsSelector =
-      ".table-responsive tbody#container-actas > tr.row-acta";
+    const rowsSelector = "#actasTable > tbody > tr";
     const votings = await page.$$eval(rowsSelector, rows => {
       return rows.map(row => {
-        // Show rows for clicking
-        row.removeAttribute("style");
+        try {
+          // Columnas:
+          // 1. Fecha de sesion (YYYYMMDD)
+          const date = row
+            .querySelector("td:nth-child(1) > span")
+            .textContent.trim();
 
-        // Date. Format: new Date(numero * 1000)
-        const url = row
-          .querySelector("td > center > button:nth-child(2)")
-          .getAttribute("urldetalle");
+          console.log(date); // eslint-disable-line
 
-        const id = url.replace("/votacion/", "");
-        const date = row.getAttribute("data-date");
-        const title = row
-          .querySelector("td:nth-child(2)")
-          .textContent.replace("(Ver expedientes)", "")
-          .trim();
-        const type = row.querySelector("td:nth-child(3)").textContent.trim();
-        const result = row.querySelector("td:nth-child(4)").textContent.trim();
+          // 2. Nro. Acta
+          const record = parseInt(
+            row.querySelector("td:nth-child(2)").textContent.trim()
+          );
+          console.log(record); // eslint-disable-line
 
-        const voting = {
-          id,
-          date,
-          title,
-          type,
-          result,
-          url
-        };
+          // 3.  Titulo y Expediente
+          const fileTitleLink = row.querySelector("td:nth-child(3)");
+          // 3.1 Titulo
+          // Deja el titulo como: "O.D. 1/2019, Art. 4, Art. 5, Art. 6, Art. 7, Art. 8, Art. 9"
+          const title = fileTitleLink.textContent
+            .replace("Ocultar Expedientes", "")
+            .replace("Ver Expedientes", "")
+            .replace(/[\r\n\t]/g, "")
+            .split(",")
+            .map(text => text.trim())
+            .join(", ");
+          console.log(title); // eslint-disable-line
 
-        return voting;
+          // 3.2 Expediente
+          const fileUrlElement = fileTitleLink.querySelector("div > a[href]");
+          const fileUrl = fileUrlElement
+            ? fileUrlElement.getAttribute("href")
+            : null;
+          console.log(fileUrl); // eslint-disable-line
+
+          // 4. Tipo
+          const type = row.querySelector("td:nth-child(4)").textContent.trim();
+          console.log(type); // eslint-disable-line
+
+          // 5. Resultado
+          const result = row
+            .querySelector("td:nth-child(5) > div")
+            .textContent.trim();
+          console.log(result); // eslint-disable-line
+
+          // 6. Acta de votación
+          const recordUrl = row
+            .querySelector("td:nth-child(6) > a[href]")
+            .getAttribute("href");
+          console.log(recordUrl); // eslint-disable-line
+
+          // 7. Detalle
+          const detailsUrl = row
+            .querySelector("td:nth-child(7) > a[href]")
+            .getAttribute("href");
+          console.log(detailsUrl); // eslint-disable-line
+
+          // 8. Video
+          const videoUrlElement = row.querySelector(
+            "td:nth-child(8) > a[href]"
+          );
+          const videoUrl = videoUrlElement
+            ? videoUrlElement.getAttribute("href")
+            : "";
+          console.log(videoUrl); // eslint-disable-line
+
+          const voting = {
+            date,
+            record,
+            title,
+            fileUrl,
+            type,
+            result,
+            recordUrl,
+            detailsUrl,
+            videoUrl
+          };
+          return voting;
+        } catch (error) {
+          console.error(error); //eslint-disable-line
+        }
       });
     });
     logger.info(
       `Análisis de votaciones finalizada. Cantidad: ${votings.length}`
     );
-
-    logger.info(`Analizando registros...`);
-
-    for (const index in votings) {
-      let voting = votings[index];
-      const nth = parseInt(index) + 1;
-      const linkSelector = `${rowsSelector}:nth-child(${nth}) > td:nth-child(2) a[id]`;
-      const recordsSelector = `${rowsSelector}:nth-child(${nth}) > td:nth-child(2) div[tituloexpediente]`;
-      try {
-        const link = await page.$(linkSelector);
-        const linkTextProp = await link.getProperty("textContent");
-        const linkText = await linkTextProp.jsonValue();
-        if (linkText.indexOf("Ver") > -1) {
-          await link.click();
-          await page.waitForSelector(recordsSelector);
-        }
-        const records = await page.$$eval(recordsSelector, records =>
-          records.map(record => {
-            const id = record.getAttribute("identificador");
-            const title = record.getAttribute("tituloexpediente");
-            return {
-              id,
-              title
-            };
-          })
-        );
-        voting.records = records;
-        logger.warn(
-          `Registros de la votación #${voting.id}. Cantidad:`,
-          records.length
-        );
-      } catch (error) {
-        logger.warn(`Votación #${voting.id} no tiene registros`);
-        voting.records = [];
-      }
-    }
-    logger.info(`Análisis de registros finalizado`);
 
     await page.close();
     return votings;
