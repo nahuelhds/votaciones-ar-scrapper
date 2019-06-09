@@ -128,6 +128,15 @@ Si utilizás VSCode, este proyecto lo tiene activado por defecto.
 
 Más información: [https://code.visualstudio.com/blogs/2018/07/12/introducing-logpoints-and-auto-attach]()
 
+# TODOs
+
+- **Typescript.** En especial para definir interfaces que permitan escalar a otros proveedores de una forma estandarizada.
+- Desacoplar y simplificar:
+  1. Extraer la lógica del scrapper del proveedor
+  1. Proveedores sólo con funciones puras.
+- Integrar tests
+- Logger
+
 # Colaboraciones
 
 Si te interesa colaborar, contactate conmigo a través de [mi cuenta en Twitter](https://twitter.com/nahuelhds).
@@ -135,6 +144,6 @@ Si te interesa colaborar, contactate conmigo a través de [mi cuenta en Twitter]
 # nahuelhds
 
 Segui mi actividad en:
+
 - Medium: [@nahuelhds](http://medium.com/@nahuelhds)
 - Twitter: [@nahuelhds](https://twitter.com/nahuelhds)
-
