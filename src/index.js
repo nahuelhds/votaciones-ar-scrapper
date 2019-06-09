@@ -1,7 +1,7 @@
 import yargs from "yargs";
 
 import { getDataFromFile, persistData } from "services/fs";
-import diputados from "providers/ar/diputados";
+import diputados from "providers/ar-diputados";
 import logger from "services/logger";
 
 const scrapper = new diputados.scrapper();
