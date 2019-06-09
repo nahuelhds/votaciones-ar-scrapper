@@ -55,7 +55,7 @@ export default class Scrapper {
           if (text.indexOf("Failed to load resource") > -1) {
             return;
           }
-          logger.log("PAGE LOG:", text);
+          logger.log(`PAGE LOG: ${text}`);
         });
       }
       return page;
@@ -70,10 +70,10 @@ export default class Scrapper {
   parseVotingsFromYear = async year => {
     logger.info(`Abriendo pestaña`);
     const page = await this.createPage();
-    logger.info(`Ingresando al sitio`, VOTINGS_URI);
+    logger.info(`Ingresando al sitio ${VOTINGS_URI}`);
     await page.goto(VOTINGS_URI, { waitUntil: "networkidle2" });
     try {
-      logger.info(`Ingresando al año`, year);
+      logger.info(`Ingresando al año ${year}`);
       await this.gotoYear(page, year);
     } catch (err) {
       throw err;
@@ -116,7 +116,9 @@ export default class Scrapper {
         return voting;
       });
     });
-    logger.info(`Análisis de votaciones finalizada. Cantidad:`, votings.length);
+    logger.info(
+      `Análisis de votaciones finalizada. Cantidad: ${votings.length}`
+    );
 
     logger.info(`Analizando registros...`);
 
@@ -192,13 +194,13 @@ export default class Scrapper {
       const presidentElement = await page.$(`.white-box #custom-share h4 > b`);
       const presidentProp = await presidentElement.getProperty("textContent");
       voting.president = await presidentProp.jsonValue();
-      logger.info("Presidente\t\t", voting.president);
+      logger.info(`Presidente\t\t ${voting.president}`);
 
       try {
         const documentUrl = await page.$(`.white-box div:nth-child(3) h5 a`);
         const documentUrlProp = await documentUrl.getProperty("href");
         voting.documentUrl = await documentUrlProp.jsonValue();
-        logger.info("URL del documento\t", voting.documentUrl);
+        logger.info(`URL del documento\t ${voting.documentUrl}`);
       } catch (err) {
         logger.info("No se pudo obtener la URL del documento");
       }
@@ -210,14 +212,14 @@ export default class Scrapper {
         "textContent"
       );
       voting.affirmativeCount = await affirmativeCountProp.jsonValue();
-      logger.info("Votos afirmativos\t", voting.affirmativeCount);
+      logger.info(`Votos afirmativos\t${voting.affirmativeCount}`);
 
       const negativeCount = await page.$(
         `.white-box div:nth-child(3) > div.row > div:nth-child(2) > ul > h3`
       );
       const negativeCountProp = await negativeCount.getProperty("textContent");
       voting.negativeCount = await negativeCountProp.jsonValue();
-      logger.info("Votos negativos\t\t", voting.negativeCount);
+      logger.info(`Votos negativos\t\t${voting.negativeCount}`);
 
       const abstentionCount = await page.$(
         `.white-box div:nth-child(3) > div.row > div:nth-child(3) > ul > h3`
@@ -226,14 +228,14 @@ export default class Scrapper {
         "textContent"
       );
       voting.abstentionCount = await abstentionCountProp.jsonValue();
-      logger.info("Abstenciones\t\t", voting.abstentionCount);
+      logger.info(`Abstenciones\t\t${voting.abstentionCount}`);
 
       const absentCount = await page.$(
         `.white-box div:nth-child(3) > div.row > div:nth-child(4) > ul > h3`
       );
       const absentCountProp = await absentCount.getProperty("textContent");
       voting.absentCount = await absentCountProp.jsonValue();
-      logger.info("Ausentes\t\t", voting.absentCount);
+      logger.info(`Ausentes\t\t${voting.absentCount}`);
 
       await this.downloadVotesCsvFromPage(page, downloadRelativePath);
     } catch (err) {
