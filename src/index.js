@@ -34,11 +34,11 @@ yargs
 
 async function parseVotingsFromYear(year) {
   try {
-    logger.log("INICIO DEL ANALISIS DEL AÑO", year);
+    logger.info("INICIO DEL ANALISIS DEL AÑO", year);
     await scrapper.start();
     try {
       const votings = await scrapper.parseVotingsFromYear(year);
-      const path = await persistData("diputados", `${year}.json`, votings);
+      const path = await persistData("senadores", `${year}.json`, votings);
       logger.info(`Votaciones guardadas. Archivo: ${path}`);
     } catch (err) {
       logger.error(err);
@@ -57,21 +57,21 @@ async function parseVotingsDetailsFromYear(year) {
     logger.info(`INICIO ANALISIS DE VOTACIONES DEL AÑO ${year}`);
     try {
       await scrapper.start();
-      const database = getDataFromFile(`diputados/${year}.json`);
+      const database = getDataFromFile(`senadores/${year}.json`);
       const page = await scrapper.createPage();
       const editedVotings = [];
       for (let voting of database) {
         const editedVoting = await scrapper.parseVotingsDetails(
           page,
           voting,
-          `diputados/votos/${voting.id}`
+          `senadores/votos/${voting.id}`
         );
 
         editedVotings.push(editedVoting);
       }
 
       const path = await persistData(
-        "diputados",
+        "senadores",
         `${year}.json`,
         editedVotings
       );

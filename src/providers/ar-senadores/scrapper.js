@@ -65,6 +65,7 @@ export default class Scrapper {
     try {
       logger.info(`Ingresando al año ${year}`);
       await this.gotoYear(page, year);
+      await this.setMaxPagination(page, 100);
     } catch (err) {
       throw err;
     }
@@ -73,98 +74,151 @@ export default class Scrapper {
 
     // Votaciones - Información general
     const rowsSelector = "#actasTable > tbody > tr";
-    const votings = await page.$$eval(rowsSelector, rows => {
-      return rows.map(row => {
-        try {
-          // Columnas:
-          // 1. Fecha de sesion (YYYYMMDD)
-          const date = row
-            .querySelector("td:nth-child(1) > span")
-            .textContent.trim();
+    const votings = await page.$$eval(rowsSelector, this.parsePageVotingsRows);
 
-          console.log(date); // eslint-disable-line
-
-          // 2. Nro. Acta
-          const record = parseInt(
-            row.querySelector("td:nth-child(2)").textContent.trim()
-          );
-          console.log(record); // eslint-disable-line
-
-          // 3.  Titulo y Expediente
-          const fileTitleLink = row.querySelector("td:nth-child(3)");
-          // 3.1 Titulo
-          // Deja el titulo como: "O.D. 1/2019, Art. 4, Art. 5, Art. 6, Art. 7, Art. 8, Art. 9"
-          const title = fileTitleLink.textContent
-            .replace("Ocultar Expedientes", "")
-            .replace("Ver Expedientes", "")
-            .replace(/[\r\n\t]/g, "")
-            .split(",")
-            .map(text => text.trim())
-            .join(", ");
-          console.log(title); // eslint-disable-line
-
-          // 3.2 Expediente
-          const fileUrlElement = fileTitleLink.querySelector("div > a[href]");
-          const fileUrl = fileUrlElement
-            ? fileUrlElement.getAttribute("href")
-            : null;
-          console.log(fileUrl); // eslint-disable-line
-
-          // 4. Tipo
-          const type = row.querySelector("td:nth-child(4)").textContent.trim();
-          console.log(type); // eslint-disable-line
-
-          // 5. Resultado
-          const result = row
-            .querySelector("td:nth-child(5) > div")
-            .textContent.trim();
-          console.log(result); // eslint-disable-line
-
-          // 6. Acta de votación
-          const recordUrl = row
-            .querySelector("td:nth-child(6) > a[href]")
-            .getAttribute("href");
-          console.log(recordUrl); // eslint-disable-line
-
-          // 7. Detalle
-          const detailsUrl = row
-            .querySelector("td:nth-child(7) > a[href]")
-            .getAttribute("href");
-          console.log(detailsUrl); // eslint-disable-line
-
-          // 8. Video
-          const videoUrlElement = row.querySelector(
-            "td:nth-child(8) > a[href]"
-          );
-          const videoUrl = videoUrlElement
-            ? videoUrlElement.getAttribute("href")
-            : "";
-          console.log(videoUrl); // eslint-disable-line
-
-          const voting = {
-            date,
-            record,
-            title,
-            fileUrl,
-            type,
-            result,
-            recordUrl,
-            detailsUrl,
-            videoUrl
-          };
-          return voting;
-        } catch (error) {
-          console.error(error); //eslint-disable-line
-        }
-      });
-    });
-    logger.info(
-      `Análisis de votaciones finalizada. Cantidad: ${votings.length}`
-    );
+    logger.info(`Análisis finalizado. Cantidad: ${votings.length}`);
 
     await page.close();
     return votings;
   };
+
+  /**
+   * Ingresa a la pantalla de las votaciones del año dado
+   */
+  gotoYear = async (page, year) => {
+    // TODO: "-1" => Todos los años
+    const yearSelect = await page.$("select#busqueda_actas_anio");
+
+    const selectedYearOption = await page.$(
+      `select#busqueda_actas_anio > option[value="${year}"]`
+    );
+
+    if (!selectedYearOption) {
+      throw `The specified year ${year} doesn't exists as an option`;
+    }
+
+    // use manually trigger change event
+    await page.evaluate(
+      (optionElem, selectElem) => {
+        optionElem.selected = true;
+        const event = new Event("change", { bubbles: true });
+        selectElem.dispatchEvent(event);
+      },
+      selectedYearOption,
+      yearSelect
+    );
+
+    return await Promise.all([
+      page.waitForNavigation({ waitUntil: "networkidle2" }),
+      page.click('input[title="Realizar Búsqueda"]')
+    ]);
+  };
+
+  setMaxPagination = async (page, quantity) => {
+    const paginationSelect = await page.$("select[name=actasTable_length]");
+
+    const paginationOption = await page.$(
+      `select[name=actasTable_length] > option[value="${quantity}"]`
+    );
+
+    if (!paginationOption) {
+      throw `The specified quantity ${quantity} doesn't exists as an option`;
+    }
+
+    // use manually trigger change event
+    await page.evaluate(
+      (optionElem, selectElem) => {
+        optionElem.selected = true;
+        const event = new Event("change", { bubbles: true });
+        selectElem.dispatchEvent(event);
+      },
+      paginationOption,
+      paginationSelect
+    );
+  };
+
+  parsePageVotingsRows = rows =>
+    rows.map(row => {
+      try {
+        // Columnas:
+        // 1. Fecha de sesion (YYYYMMDD)
+        const date = row
+          .querySelector("td:nth-child(1) > span")
+          .textContent.trim();
+
+        console.log(date); // eslint-disable-line
+
+        // 2. Nro. Acta
+        const record = parseInt(
+          row.querySelector("td:nth-child(2)").textContent.trim()
+        );
+        console.log(record); // eslint-disable-line
+
+        // 3.  Titulo y Expediente
+        const fileTitleLink = row.querySelector("td:nth-child(3)");
+        // 3.1 Titulo
+        // Deja el titulo como: "O.D. 1/2019, Art. 4, Art. 5, Art. 6, Art. 7, Art. 8, Art. 9"
+        const title = fileTitleLink.textContent
+          .replace("Ocultar Expedientes", "")
+          .replace("Ver Expedientes", "")
+          .replace(/[\r\n\t]/g, "")
+          .split(",")
+          .map(text => text.trim())
+          .join(", ");
+        console.log(title); // eslint-disable-line
+
+        // 3.2 Expediente
+        const fileUrlElement = fileTitleLink.querySelector("div > a[href]");
+        const fileUrl = fileUrlElement
+          ? fileUrlElement.getAttribute("href")
+          : null;
+        console.log(fileUrl); // eslint-disable-line
+
+        // 4. Tipo
+        const type = row.querySelector("td:nth-child(4)").textContent.trim();
+        console.log(type); // eslint-disable-line
+
+        // 5. Resultado
+        const result = row
+          .querySelector("td:nth-child(5) > div")
+          .textContent.trim();
+        console.log(result); // eslint-disable-line
+
+        // 6. Acta de votación
+        const recordUrl = row
+          .querySelector("td:nth-child(6) > a[href]")
+          .getAttribute("href");
+        console.log(recordUrl); // eslint-disable-line
+
+        // 7. Detalle
+        const detailsUrl = row
+          .querySelector("td:nth-child(7) > a[href]")
+          .getAttribute("href");
+        console.log(detailsUrl); // eslint-disable-line
+
+        // 8. Video
+        const videoUrlElement = row.querySelector("td:nth-child(8) > a[href]");
+        const videoUrl = videoUrlElement
+          ? videoUrlElement.getAttribute("href")
+          : "";
+        console.log(videoUrl); // eslint-disable-line
+
+        const voting = {
+          date,
+          record,
+          title,
+          fileUrl,
+          type,
+          result,
+          recordUrl,
+          detailsUrl,
+          videoUrl
+        };
+        return voting;
+      } catch (error) {
+        console.error(error); //eslint-disable-line
+      }
+    });
 
   /**
    * Analiza y descarga los votos de les legisladores
@@ -283,37 +337,5 @@ export default class Scrapper {
     }
 
     return downloadPath;
-  };
-
-  /**
-   * Ingresa a la pantalla de las votaciones del año dado
-   */
-  gotoYear = async (page, year) => {
-    // TODO: "-1" => Todos los años
-    const yearSelect = await page.$("select#busqueda_actas_anio");
-
-    const selectedYearOption = await page.$(
-      `select#busqueda_actas_anio > option[value="${year}"]`
-    );
-
-    if (!selectedYearOption) {
-      throw `The specified year ${year} doesn't exists as an option`;
-    }
-
-    // use manually trigger change event
-    await page.evaluate(
-      (optionElem, selectElem) => {
-        optionElem.selected = true;
-        const event = new Event("change", { bubbles: true });
-        selectElem.dispatchEvent(event);
-      },
-      selectedYearOption,
-      yearSelect
-    );
-
-    return await Promise.all([
-      page.waitForNavigation({ waitUntil: "networkidle2" }),
-      page.click('input[title="Realizar Búsqueda"]')
-    ]);
   };
 }
