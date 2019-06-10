@@ -27,3 +27,35 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export default logger;
+
+/**
+ * Procesa el console.log|info|error|warn que viene de dentro de las paginas accedidas
+ * por Puppeteer
+ *
+ * @see https://github.com/GoogleChrome/puppeteer/issues/3397#issuecomment-429325514
+ * @param {Object} msg
+ */
+export const pageConsoleLogger = async msg => {
+  if (process.env.NODE_ENV !== "production") {
+    const args = await msg.args();
+    args.forEach(async arg => {
+      const val = await arg.jsonValue();
+      // value is serializable
+      if (JSON.stringify(val) !== JSON.stringify({})) {
+        logger.info(val);
+        // value is unserializable (or an empty oject)
+      } else {
+        const { type, subtype, description } = arg._remoteObject;
+        switch (subtype) {
+          case "error":
+            logger.error(description);
+            break;
+          default:
+            logger.info(
+              `type: ${type}, subtype: ${subtype}, description:\n ${description}`
+            );
+        }
+      }
+    });
+  }
+};
