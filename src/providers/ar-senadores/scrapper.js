@@ -65,7 +65,9 @@ export default class Scrapper {
     try {
       logger.info(`Ingresando al año ${year}`);
       await this.gotoYear(page, year);
-      await this.setMaxPagination(page, 100);
+      const resultsPerPage = 100;
+      logger.info(`Resultados por página: ${resultsPerPage}`);
+      await this.setMaxPagination(page, resultsPerPage);
     } catch (err) {
       throw err;
     }
@@ -74,7 +76,29 @@ export default class Scrapper {
 
     // Votaciones - Información general
     const rowsSelector = "#actasTable > tbody > tr";
-    const votings = await page.$$eval(rowsSelector, this.parsePageVotingsRows);
+    const votings = [];
+    let hasNextPage = true;
+    let currentPage = 0;
+    while (hasNextPage) {
+      currentPage++;
+      try {
+        // Voting data
+        const votingsData = await page.$$eval(
+          rowsSelector,
+          this.parsePageVotingsRows
+        );
+        votingsData.map(voting => votings.push(voting));
+
+        // Next page
+        const nextButtonElement = await page.$("#actasTable_next");
+        hasNextPage = await this.hasNextPaginationPage(nextButtonElement);
+        if (hasNextPage) {
+          await page.click("#actasTable_next");
+        }
+      } catch (error) {
+        logger.error(`Error on page ${currentPage}: ${error.message}`);
+      }
+    }
 
     logger.info(`Análisis finalizado. Cantidad: ${votings.length}`);
 
@@ -163,7 +187,7 @@ export default class Scrapper {
           .replace("Ver Expedientes", "")
           .replace(/[\r\n\t]/g, "")
           .split(",")
-          .map(text => text.trim())
+          .map(text => text.replace(/\s+/g, " ").trim())
           .join(", ");
         console.log(title); // eslint-disable-line
 
@@ -203,7 +227,11 @@ export default class Scrapper {
           : "";
         console.log(videoUrl); // eslint-disable-line
 
+        // ID que se deduce del link de detalles
+        const id = parseInt(detailsUrl.replace("/votaciones/detalleActa/", ""));
+
         const voting = {
+          id,
           date,
           record,
           title,
@@ -219,6 +247,22 @@ export default class Scrapper {
         console.error(error); //eslint-disable-line
       }
     });
+
+  /**
+   * Verifica si en la tabla aun quedan paginas por pasar
+   */
+  hasNextPaginationPage = async nextButtonElement => {
+    let hasNextPage = false;
+    try {
+      const nextButtonProp = await nextButtonElement.getProperty("className");
+      const nextButtonClass = await nextButtonProp.jsonValue();
+      hasNextPage = nextButtonClass.indexOf("disabled") === -1;
+    } catch (error) {
+      logger.error(`goToNextPaginationPage: ${error.message}`);
+    }
+
+    return hasNextPage;
+  };
 
   /**
    * Analiza y descarga los votos de les legisladores

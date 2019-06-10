@@ -40,8 +40,8 @@ async function parseVotingsFromYear(year) {
       const votings = await scrapper.parseVotingsFromYear(year);
       const path = await persistData("senadores", `${year}.json`, votings);
       logger.info(`Votaciones guardadas. Archivo: ${path}`);
-    } catch (err) {
-      logger.error(err);
+    } catch (error) {
+      logger.error(`parseVotingsFromYear: ${error.message}`);
     }
   } catch (err) {
     logger.error(`Ocurrió un error general durante el proceso ${err}`);
