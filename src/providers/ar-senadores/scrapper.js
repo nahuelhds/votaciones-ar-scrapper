@@ -76,17 +76,25 @@ export default class Scrapper {
 
     // Votaciones - Información general
     const rowsSelector = "#actasTable > tbody > tr";
+    const rowsEmptySelector = "#actasTable > tbody > tr > td.dataTables_empty";
     const votings = [];
     let hasNextPage = true;
     let currentPage = 0;
     while (hasNextPage) {
       currentPage++;
       try {
+        // Check if the data is empty first
+        const emptyData = await page.$(rowsEmptySelector);
+        if (emptyData !== null) {
+          break;
+        }
+
         // Voting data
         const votingsData = await page.$$eval(
           rowsSelector,
           this.parsePageVotingsRows
         );
+
         votingsData.map(voting => votings.push(voting));
 
         // Next page
@@ -161,8 +169,8 @@ export default class Scrapper {
     );
   };
 
-  parsePageVotingsRows = rows =>
-    rows.map(row => {
+  parsePageVotingsRows = rows => {
+    return rows.map(row => {
       try {
         // Columnas:
         // 1. Fecha de sesion (YYYYMMDD)
@@ -215,20 +223,25 @@ export default class Scrapper {
         console.log(recordUrl); // eslint-disable-line
 
         // 7. Detalle
-        const detailsUrl = row
-          .querySelector("td:nth-child(7) > a[href]")
-          .getAttribute("href");
+        const detailsUrlElement = row.querySelector(
+          "td:nth-child(7) > a[href]"
+        );
+        const detailsUrl = detailsUrlElement
+          ? detailsUrlElement.getAttribute("href")
+          : null;
         console.log(detailsUrl); // eslint-disable-line
 
         // 8. Video
         const videoUrlElement = row.querySelector("td:nth-child(8) > a[href]");
         const videoUrl = videoUrlElement
           ? videoUrlElement.getAttribute("href")
-          : "";
+          : null;
         console.log(videoUrl); // eslint-disable-line
 
-        // ID que se deduce del link de detalles
-        const id = parseInt(detailsUrl.replace("/votaciones/detalleActa/", ""));
+        // ID que se deduce del link del acta, ya que es lo que está siempre
+        const id = parseInt(
+          recordUrl.replace("/votaciones/verActaVotacion/", "")
+        );
 
         const voting = {
           id,
@@ -247,6 +260,7 @@ export default class Scrapper {
         console.error(error); //eslint-disable-line
       }
     });
+  };
 
   /**
    * Verifica si en la tabla aun quedan paginas por pasar
