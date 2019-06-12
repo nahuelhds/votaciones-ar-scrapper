@@ -66,7 +66,7 @@ async function parseVotingsDetailsFromYear(year) {
         const editedVoting = await scrapper.parseVotingsDetails(
           page,
           voting,
-          `senadores/votos/${voting.id}`
+          `senadores/votos/${year}`
         );
 
         editedVotings.push(editedVoting);
@@ -79,10 +79,10 @@ async function parseVotingsDetailsFromYear(year) {
       );
       logger.info(`Votaciones actualizadas. Archivo: ${path}`);
     } catch (err) {
-      logger.error(err);
+      logger.error(err.stack);
     }
   } catch (err) {
-    logger.error(err);
+    logger.error(err.stack);
   } finally {
     await scrapper.finish();
     logger.info(`FIN ANALISIS DE VOTACIONES DEL AÑO: ${year}`);
