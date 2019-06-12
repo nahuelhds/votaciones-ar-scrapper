@@ -7,11 +7,11 @@
   "license": "GPL-3.0",
   "scripts": {
     "eslint": "eslint --ext .js --fix --ignore-path .gitignore .",
+    "predev": "npm run eslint",
+    "watch": "nodemon --inspect-brk=5858 --exec babel-node src/index.js --watch src",
+    "dev": "babel-node src/index.js --inspect-brk=5858",
     "build": "babel src --out-dir dist",
-    "prestart": "npm run eslint",
-    "dev": "nodemon --inspect-brk=5858 --exec babel-node src/index.js --watch src",
-    "start": "babel-node src/index.js",
-    "serve": "node dist/index.js"
+    "start": "NODE_ENV=production node dist/index.js"
   },
   "dependencies": {
     "dotenv": "^7.0.0",
