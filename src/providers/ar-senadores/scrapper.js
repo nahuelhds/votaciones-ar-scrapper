@@ -13,6 +13,10 @@ if (__DEV__) {
     slowMo: 100 // slow down by 250ms,
   };
 }
+const pageViewport = {
+  width: 1200,
+  height: 900
+};
 
 export default class Scrapper {
   browser;
@@ -42,6 +46,9 @@ export default class Scrapper {
     try {
       logger.info(`Abriendo nueva pestaña`);
       const page = await this.browser.newPage();
+      if (__DEV__) {
+        page.setViewport(pageViewport);
+      }
       page.on("console", pageConsoleLogger);
       return page;
     } catch (error) {
@@ -376,9 +383,8 @@ export default class Scrapper {
         console.log(region);
 
         // 5. Cómo votó
-        const vote = row
-          .querySelector("td:nth-child(5) > div")
-          .textContent.trim();
+        const voteElement = row.querySelector("td:nth-child(5) > div");
+        const vote = voteElement ? voteElement.textContent.trim() : null;
         console.log(vote);
 
         const data = {
