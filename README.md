@@ -147,3 +147,8 @@ Segui mi actividad en:
 
 - Medium: [@nahuelhds](http://medium.com/@nahuelhds)
 - Twitter: [@nahuelhds](https://twitter.com/nahuelhds)
+
+Si te gusta lo que hago y querés darme una mano:
+
+- Podés [invitarme un café en Ko-Fi](https://ko-fi.com/nahuelhds)
+- O también [dándome apoyo en Patreon](https://www.patreon.com/nahuelhds)
