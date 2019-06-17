@@ -237,7 +237,10 @@ export default class Scrapper {
       voting.absentCount = await absentCountProp.jsonValue();
       logger.info(`Ausentes\t\t${voting.absentCount}`);
 
-      await this.downloadVotesCsvFromPage(page, downloadRelativePath);
+      await this.downloadVotesCsvFromPage(
+        page,
+        `${downloadRelativePath}/${voting.id}`
+      );
     } catch (err) {
       logger.info(err);
     } finally {
