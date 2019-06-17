@@ -1,10 +1,10 @@
-import { Agent } from 'https';
-import fetch from 'node-fetch';
+import { Agent } from "https";
+import fetch from "node-fetch";
 
-const METHOD_GET = 'GET';
-const METHOD_POST = 'POST';
-const METHOD_PUT = 'PUT';
-const METHOD_DELETE = 'DELETE';
+const METHOD_GET = "GET";
+const METHOD_POST = "POST";
+const METHOD_PUT = "PUT";
+const METHOD_DELETE = "DELETE";
 
 export const req = (method, endpoint, params = null, headers = {}) => {
   const body = params !== null ? JSON.stringify(params) : null;
@@ -12,15 +12,15 @@ export const req = (method, endpoint, params = null, headers = {}) => {
   return fetch(uri, {
     method,
     headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
+      Accept: "application/json",
+      "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.API_TOKEN}`,
-      ...headers,
+      ...headers
     },
     body,
     agent: new Agent({
-      rejectUnauthorized: false,
-    }),
+      rejectUnauthorized: false
+    })
   });
 };
 
@@ -38,11 +38,11 @@ export const del = (endpoint, headers) =>
 const stringify = object =>
   Object.keys(object)
     .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(object[key])}`)
-    .join('&');
+    .join("&");
 
 export default {
   get,
   post,
   put,
-  del,
+  del
 };

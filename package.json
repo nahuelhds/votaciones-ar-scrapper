@@ -1,5 +1,5 @@
 {
-  "name": "votaciones-ar-scrapper",
+  "name": "app",
   "version": "1.0.0",
   "description": "Scrapper que toma y descarga la información disponible en la web oficial de Diputados Argentina https://votaciones.hcdn.gob.ar/",
   "main": "src/index.js",
@@ -7,29 +7,42 @@
   "license": "GPL-3.0",
   "scripts": {
     "eslint": "eslint --ext .js --fix --ignore-path .gitignore .",
-    "build": "./node_modules/.bin/babel src --out-dir dist --source-maps",
-    "prestart": "npm run build",
-    "start": "node dist/index.js",
-    "predev": "npm run build",
-    "dev": "NODE_ENV=development node --inspect-brk=5858 dist/index.js",
-    "watch": "NODE_ENV=development node dist/index.js"
+    "predev": "npm run eslint",
+    "watch": "nodemon --inspect-brk=5858 --exec babel-node src/index.js --watch src",
+    "dev": "babel-node src/index.js --inspect-brk=5858",
+    "build": "babel src --out-dir dist",
+    "start": "NODE_ENV=production node dist/index.js",
+    "csv-votaciones": "for file in ./$npm_package_config_folder/*.json; do json2csv -i $file >> ./$npm_package_config_folder/votaciones.csv; done",
+    "csv-votos": "for file in ./$npm_package_config_folder/votos/$npm_package_config_year/*.json; do json2csv -i $file >> ./$npm_package_config_folder/votaciones_votos-$npm_package_config_year.csv; done",
+    "diputados-csv-votaciones": "npm run csv-votaciones --app:folder=data/diputados",
+    "senadores-csv-votaciones": "npm run csv-votaciones --app:folder=data/senadores",
+    "senadores-csv-votos": "npm run csv-votos --app:folder=data/senadores"
   },
   "dependencies": {
     "dotenv": "^7.0.0",
-    "node-fetch": "^2.3.0",
-    "puppeteer": "^1.9.0",
-    "yargs": "^13.2.2"
+    "json2csv": "^4.5.1",
+    "node-fetch": "^2.6.0",
+    "puppeteer": "^1.17.0",
+    "winston": "^3.2.1",
+    "yargs": "^13.2.4"
   },
   "devDependencies": {
-    "@babel/cli": "^7.1.2",
-    "@babel/core": "^7.1.2",
-    "@babel/plugin-proposal-class-properties": "^7.1.0",
-    "@babel/preset-env": "^7.1.0",
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/node": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
+    "@babel/preset-env": "^7.4.5",
     "babel-eslint": "^10.0.1",
-    "babel-plugin-inline-dotenv": "^1.1.2",
-    "eslint": "^5.15.1",
-    "eslint-config-prettier": "^4.1.0",
-    "eslint-plugin-prettier": "^3.0.1",
-    "prettier": "^1.16.4"
+    "babel-plugin-inline-dotenv": "^1.3.3",
+    "babel-plugin-module-resolver": "^3.2.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^4.3.0",
+    "eslint-import-resolver-babel-module": "^5.1.0",
+    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-module-resolver": "^0.9.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "jest": "^24.8.0",
+    "nodemon": "^1.19.1",
+    "prettier": "^1.17.1"
   }
 }
