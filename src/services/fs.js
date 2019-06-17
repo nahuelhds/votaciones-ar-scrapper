@@ -4,7 +4,7 @@ import path from "path";
 export const DOWNLOAD_PATH = "./data";
 
 export const getDataFromFile = relativepath => {
-  return require(`../${DOWNLOAD_PATH}/${relativepath}`);
+  return require(`../../${DOWNLOAD_PATH}/${relativepath}`);
 };
 export const getContentsFromFile = relativepath => {
   const contents = fs.readFileSync(`${DOWNLOAD_PATH}/${relativepath}`, "utf8");

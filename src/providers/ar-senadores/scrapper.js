@@ -1,14 +1,9 @@
 import puppeteer from "puppeteer";
 import logger, { pageConsoleLogger } from "services/logger";
-import {
-  DOWNLOAD_PATH,
-  getFilesFromFolder,
-  dirExistsSync,
-  createDirRecursively
-} from "services/fs";
+import { persistData } from "services/fs";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
-const VOTINGS_URI = "https://www.senado.gov.ar/votaciones/actas";
+const VOTINGS_URI = "https://www.senado.gov.ar/votaciones";
 
 let puppeteerConfig = {};
 if (__DEV__) {
@@ -18,6 +13,10 @@ if (__DEV__) {
     slowMo: 100 // slow down by 250ms,
   };
 }
+const pageViewport = {
+  width: 1200,
+  height: 900
+};
 
 export default class Scrapper {
   browser;
@@ -47,6 +46,9 @@ export default class Scrapper {
     try {
       logger.info(`Abriendo nueva pestaña`);
       const page = await this.browser.newPage();
+      if (__DEV__) {
+        page.setViewport(pageViewport);
+      }
       page.on("console", pageConsoleLogger);
       return page;
     } catch (error) {
@@ -60,14 +62,19 @@ export default class Scrapper {
   parseVotingsFromYear = async year => {
     logger.info(`Abriendo pestaña`);
     const page = await this.createPage();
-    logger.info(`Ingresando al sitio ${VOTINGS_URI}`);
-    await page.goto(VOTINGS_URI, { waitUntil: "networkidle2" });
+    const votingsUri = `${VOTINGS_URI}/actas`;
+    logger.info(`Ingresando al sitio ${votingsUri}`);
+    await page.goto(votingsUri, { waitUntil: "networkidle2" });
     try {
       logger.info(`Ingresando al año ${year}`);
       await this.gotoYear(page, year);
       const resultsPerPage = 100;
       logger.info(`Resultados por página: ${resultsPerPage}`);
-      await this.setMaxPagination(page, resultsPerPage);
+      await this.setMaxPagination(
+        page,
+        "select[name=actasTable_length]",
+        resultsPerPage
+      );
     } catch (err) {
       throw err;
     }
@@ -146,11 +153,11 @@ export default class Scrapper {
     ]);
   };
 
-  setMaxPagination = async (page, quantity) => {
-    const paginationSelect = await page.$("select[name=actasTable_length]");
+  setMaxPagination = async (page, selector, quantity) => {
+    const paginationSelect = await page.$(selector);
 
     const paginationOption = await page.$(
-      `select[name=actasTable_length] > option[value="${quantity}"]`
+      `${selector} > option[value="${quantity}"]`
     );
 
     if (!paginationOption) {
@@ -171,20 +178,22 @@ export default class Scrapper {
 
   parsePageVotingsRows = rows => {
     return rows.map(row => {
+      /* eslint-disable no-console */
       try {
         // Columnas:
         // 1. Fecha de sesion (YYYYMMDD)
         const date = row
           .querySelector("td:nth-child(1) > span")
-          .textContent.trim();
+          .textContent.trim()
+          .replace(/([0-9]{4})([0-9]{2})([0-9]{2})/, "$1-$2-$3");
 
-        console.log(date); // eslint-disable-line
+        console.log(date);
 
         // 2. Nro. Acta
         const record = parseInt(
           row.querySelector("td:nth-child(2)").textContent.trim()
         );
-        console.log(record); // eslint-disable-line
+        console.log(record);
 
         // 3.  Titulo y Expediente
         const fileTitleLink = row.querySelector("td:nth-child(3)");
@@ -197,30 +206,30 @@ export default class Scrapper {
           .split(",")
           .map(text => text.replace(/\s+/g, " ").trim())
           .join(", ");
-        console.log(title); // eslint-disable-line
+        console.log(title);
 
         // 3.2 Expediente
         const fileUrlElement = fileTitleLink.querySelector("div > a[href]");
         const fileUrl = fileUrlElement
           ? fileUrlElement.getAttribute("href")
           : null;
-        console.log(fileUrl); // eslint-disable-line
+        console.log(fileUrl);
 
         // 4. Tipo
         const type = row.querySelector("td:nth-child(4)").textContent.trim();
-        console.log(type); // eslint-disable-line
+        console.log(type);
 
         // 5. Resultado
         const result = row
           .querySelector("td:nth-child(5) > div")
           .textContent.trim();
-        console.log(result); // eslint-disable-line
+        console.log(result);
 
         // 6. Acta de votación
         const recordUrl = row
           .querySelector("td:nth-child(6) > a[href]")
           .getAttribute("href");
-        console.log(recordUrl); // eslint-disable-line
+        console.log(recordUrl);
 
         // 7. Detalle
         const detailsUrlElement = row.querySelector(
@@ -229,14 +238,14 @@ export default class Scrapper {
         const detailsUrl = detailsUrlElement
           ? detailsUrlElement.getAttribute("href")
           : null;
-        console.log(detailsUrl); // eslint-disable-line
+        console.log(detailsUrl);
 
         // 8. Video
         const videoUrlElement = row.querySelector("td:nth-child(8) > a[href]");
         const videoUrl = videoUrlElement
           ? videoUrlElement.getAttribute("href")
           : null;
-        console.log(videoUrl); // eslint-disable-line
+        console.log(videoUrl);
 
         // ID que se deduce del link del acta, ya que es lo que está siempre
         const id = parseInt(
@@ -257,8 +266,9 @@ export default class Scrapper {
         };
         return voting;
       } catch (error) {
-        console.error(error); //eslint-disable-line
+        console.error(error);
       }
+      /* eslint-enable no-console */
     });
   };
 
@@ -282,9 +292,9 @@ export default class Scrapper {
    * Analiza y descarga los votos de les legisladores
    * para la votación dada
    */
-  parseVotingsDetails = async (page, voting, downloadRelativePath) => {
+  parseVotingsDetails = async (page, voting, relativePath) => {
     try {
-      const pageUrl = `${VOTINGS_URI}${voting.url}`;
+      const pageUrl = `${VOTINGS_URI}/detalleActa/${voting.id}`;
       logger.info(`\nINICIO VOTACION #${voting.id}`);
       logger.info(pageUrl);
 
@@ -293,70 +303,36 @@ export default class Scrapper {
       });
 
       logger.info(`\nObteniendo datos...`);
-      const periodMeetingRecord = await page.$(
-        `.container-fluid > div:first-child > div.row:first-child h5`
-      );
-      const periodMeetingRecordProp = await periodMeetingRecord.getProperty(
-        "textContent"
-      );
-      const periodMeetingRecordValue = await periodMeetingRecordProp.jsonValue();
-      const periodMeetingRecordText = periodMeetingRecordValue.trim();
-      const periodMeetingRecordArray = periodMeetingRecordText.split(" - ");
-      voting.period = parseInt(periodMeetingRecordArray[0].split(" ")[1]);
-      voting.meeting = parseInt(periodMeetingRecordArray[1].split(" ")[1]);
-      voting.record = parseInt(periodMeetingRecordArray[2].split(" ")[1]);
 
-      logger.info(periodMeetingRecordText);
-
-      const presidentElement = await page.$(`.white-box #custom-share h4 > b`);
-      const presidentProp = await presidentElement.getProperty("textContent");
-      voting.president = await presidentProp.jsonValue();
-      logger.info(`Presidente\t\t ${voting.president}`);
-
-      try {
-        const documentUrl = await page.$(`.white-box div:nth-child(3) h5 a`);
-        const documentUrlProp = await documentUrl.getProperty("href");
-        voting.documentUrl = await documentUrlProp.jsonValue();
-        logger.info(`URL del documento\t ${voting.documentUrl}`);
-      } catch (err) {
-        logger.info("No se pudo obtener la URL del documento");
-      }
-
-      const affirmativeCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(1) > ul > h3`
-      );
-      const affirmativeCountProp = await affirmativeCount.getProperty(
-        "textContent"
-      );
-      voting.affirmativeCount = await affirmativeCountProp.jsonValue();
+      //parseInt(document.querySelector('.tabbable .tab-pane > div > div.row > div:nth-child(2) > .row > .col-lg-3:nth-child(1)').textContent)
+      voting.affirmativeCount = await this.getCountAsync(page, 1);
       logger.info(`Votos afirmativos\t${voting.affirmativeCount}`);
-
-      const negativeCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(2) > ul > h3`
-      );
-      const negativeCountProp = await negativeCount.getProperty("textContent");
-      voting.negativeCount = await negativeCountProp.jsonValue();
-      logger.info(`Votos negativos\t\t${voting.negativeCount}`);
-
-      const abstentionCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(3) > ul > h3`
-      );
-      const abstentionCountProp = await abstentionCount.getProperty(
-        "textContent"
-      );
-      voting.abstentionCount = await abstentionCountProp.jsonValue();
-      logger.info(`Abstenciones\t\t${voting.abstentionCount}`);
-
-      const absentCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(4) > ul > h3`
-      );
-      const absentCountProp = await absentCount.getProperty("textContent");
-      voting.absentCount = await absentCountProp.jsonValue();
+      voting.negativeCount = await this.getCountAsync(page, 2);
+      logger.info(`Votos negativos\t${voting.negativeCount}`);
+      voting.abstentionCount = await this.getCountAsync(page, 3);
+      logger.info(`Abstenciones\t${voting.abstentionCount}`);
+      voting.absentCount = await this.getCountAsync(page, 4);
       logger.info(`Ausentes\t\t${voting.absentCount}`);
 
-      await this.downloadVotesCsvFromPage(page, downloadRelativePath);
+      await this.setMaxPagination(page, "select[name=tabla_length]", 100);
+
+      const rowsSelector = "#tabla > tbody > tr";
+      const votes = await page.$$eval(
+        rowsSelector,
+        this.parsePageVotingVotesRows
+      );
+
+      for (let i in votes) {
+        votes[i] = {
+          date: voting.date,
+          votingId: voting.id,
+          ...votes[i]
+        };
+      }
+
+      await persistData(relativePath, `${voting.id}.json`, votes);
     } catch (err) {
-      logger.info(err);
+      logger.error(err.stack);
     } finally {
       logger.info(`FIN VOTACION #${voting.id}\n`);
     }
@@ -365,35 +341,74 @@ export default class Scrapper {
   };
 
   /**
+   * Obtiene el conteo de afirmativos/negativos/abstenciones/ausentes
+   */
+  getCountAsync = async (page, nthChild) => {
+    const countSelector =
+      ".tabbable .tab-pane > div > div.row > div:nth-child(2) > .row > .col-lg-3";
+    const countElement = await page.$(
+      `${countSelector}:nth-child(${nthChild})`
+    );
+    const countProp = await countElement.getProperty("textContent");
+    return parseInt(await countProp.jsonValue());
+  };
+
+  /**
    * Descarga el CSV con los votos
    */
-  downloadVotesCsvFromPage = async (page, downloadRelativePath) => {
-    const downloadPath = `${DOWNLOAD_PATH}/${downloadRelativePath}`;
-    try {
-      const files = getFilesFromFolder(downloadPath);
-      if (dirExistsSync(downloadPath) && files.length > 0) {
-        throw `El archivo de votos ya existe`;
+  parsePageVotingVotesRows = rows =>
+    rows.map(row => {
+      /* eslint-disable no-console */
+      try {
+        // Columnas:
+        // 1. Foto y enlace al perfil de senador
+        const profileUrl = row
+          .querySelector("td:nth-child(1) > a")
+          .getAttribute("href");
+
+        const legislatorId = parseInt(profileUrl.replace(/.*\/([0-9]+)/, "$1"));
+
+        console.log(legislatorId);
+        console.log(profileUrl);
+
+        const photoUrl = row
+          .querySelector("td:nth-child(1) > a > img")
+          .getAttribute("src");
+
+        console.log(photoUrl);
+
+        // 2. Senador
+        const legislator = row
+          .querySelector("td:nth-child(2)")
+          .textContent.trim();
+        console.log(legislator);
+
+        // 3. Bloque
+        const party = row.querySelector("td:nth-child(3)").textContent.trim();
+        console.log(party);
+
+        // 4. Provincia
+        const region = row.querySelector("td:nth-child(4)").textContent.trim();
+        console.log(region);
+
+        // 5. Cómo votó
+        const voteElement = row.querySelector("td:nth-child(5) > div");
+        const vote = voteElement ? voteElement.textContent.trim() : null;
+        console.log(vote);
+
+        const data = {
+          legislatorId,
+          legislator,
+          party,
+          region,
+          vote,
+          profileUrl,
+          photoUrl
+        };
+        return data;
+      } catch (error) {
+        console.error(error);
       }
-      createDirRecursively(downloadPath);
-
-      logger.info(`Descargando archivo de votos...`);
-
-      await page._client.send("Page.setDownloadBehavior", {
-        behavior: "allow",
-        downloadPath
-      });
-
-      const csvSelector = `a[title="Descargar datos en CSV"]`;
-      await page.waitForSelector(csvSelector);
-      const csvButton = await page.$(csvSelector);
-      await page.evaluate(el => {
-        return el.click();
-      }, csvButton);
-      logger.info(`Archivo de votos descargado con éxito`);
-    } catch (error) {
-      logger.info(error);
-    }
-
-    return downloadPath;
-  };
+      /* eslint-enable no-console */
+    });
 }

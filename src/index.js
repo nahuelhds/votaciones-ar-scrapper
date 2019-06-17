@@ -66,7 +66,7 @@ async function parseVotingsDetailsFromYear(year) {
         const editedVoting = await scrapper.parseVotingsDetails(
           page,
           voting,
-          `senadores/votos/${voting.id}`
+          `senadores/votos/${year}`
         );
 
         editedVotings.push(editedVoting);
@@ -79,13 +79,28 @@ async function parseVotingsDetailsFromYear(year) {
       );
       logger.info(`Votaciones actualizadas. Archivo: ${path}`);
     } catch (err) {
-      logger.error(err);
+      logger.error(err.stack);
     }
   } catch (err) {
-    logger.error(err);
+    logger.error(err.stack);
   } finally {
     await scrapper.finish();
     logger.info(`FIN ANALISIS DE VOTACIONES DEL AÑO: ${year}`);
     process.exit();
   }
 }
+
+// async function fillVotingsDetailsFromYear(year) {
+//   const database = getDataFromFile(`senadores/${year}.json`);
+//   const relativePath = `senadores/votos/${year}`;
+//   for (let voting of database) {
+//     const votes = getDataFromFile(`${relativePath}/${voting.id}.json`);
+//     const editedVotes = [];
+//     for (let vote of votes) {
+//       vote = { date: voting.date, votingId: voting.id, ...vote };
+//       editedVotes.push(vote);
+//     }
+//     await persistData(relativePath, `${voting.id}.json`, editedVotes);
+//   }
+//   process.exit();
+// }
