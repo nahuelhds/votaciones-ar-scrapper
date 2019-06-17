@@ -1,5 +1,5 @@
 {
-  "name": "votaciones-ar-scrapper",
+  "name": "app",
   "version": "1.0.0",
   "description": "Scrapper que toma y descarga la información disponible en la web oficial de Diputados Argentina https://votaciones.hcdn.gob.ar/",
   "main": "src/index.js",
@@ -11,7 +11,9 @@
     "watch": "nodemon --inspect-brk=5858 --exec babel-node src/index.js --watch src",
     "dev": "babel-node src/index.js --inspect-brk=5858",
     "build": "babel src --out-dir dist",
-    "start": "NODE_ENV=production node dist/index.js"
+    "start": "NODE_ENV=production node dist/index.js",
+    "csv-votaciones": "for file in ./$npm_package_config_folder/*.json; do json2csv -i $file >> ./data/senadores/votaciones.csv; done",
+    "csv-votos": "for file in ./$npm_package_config_folder/votos/$npm_package_config_year/*.json; do json2csv -i $file >> ./data/senadores/votaciones_votos-$npm_package_config_year.csv; done"
   },
   "dependencies": {
     "dotenv": "^7.0.0",
