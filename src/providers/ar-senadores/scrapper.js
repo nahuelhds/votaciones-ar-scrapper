@@ -184,7 +184,8 @@ export default class Scrapper {
         // 1. Fecha de sesion (YYYYMMDD)
         const date = row
           .querySelector("td:nth-child(1) > span")
-          .textContent.trim();
+          .textContent.trim()
+          .replace(/([0-9]{4})([0-9]{2})([0-9]{2})/, "$1-$2-$3");
 
         console.log(date);
 
