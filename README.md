@@ -4,6 +4,10 @@ Este scrapper se encarga de ingresar al sitio oficial de Diputados Argentina y d
 sus detalles, así como de enviar esa información en crudo al API encargado de normalizar y guardar esa información en una
 base de datos.
 
+## Documentación
+
+En el siguiente apartado se explican los métodos existentes para descargar contenido. Los proveedores disponibles al día de hoy son "diputados" y "senadores".
+
 > **IMPORTANTE**
 >
 > Este proyecto se desarrolló bajo Node 11.14.0 o superior. No se asegura el correcto funcionamiento para versiones anteriores.
@@ -12,10 +16,6 @@ base de datos.
 > De este modo, podrás cambiar entre versiones sin problemas, ejecutando simplemente `nvm use` desde la raíz del proyecto.
 >
 > Esto es posible por la existencia del archivo `.nvmrc` que le indica a NVM qué versión utilizar en este contexto.
-
-## Documentación
-
-En el siguiente apartado se explican los métodos existentes para descargar contenido. Los proveedores disponibles al día de hoy son "diputados" y "senadores".
 
 ### Descargar listado de votaciones
 
