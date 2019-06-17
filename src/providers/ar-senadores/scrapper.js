@@ -322,6 +322,14 @@ export default class Scrapper {
         this.parsePageVotingVotesRows
       );
 
+      for (let i in votes) {
+        votes[i] = {
+          date: voting.date,
+          votingId: voting.id,
+          ...votes[i]
+        };
+      }
+
       await persistData(relativePath, `${voting.id}.json`, votes);
     } catch (err) {
       logger.error(err.stack);

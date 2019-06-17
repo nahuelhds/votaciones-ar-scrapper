@@ -89,3 +89,18 @@ async function parseVotingsDetailsFromYear(year) {
     process.exit();
   }
 }
+
+// async function fillVotingsDetailsFromYear(year) {
+//   const database = getDataFromFile(`senadores/${year}.json`);
+//   const relativePath = `senadores/votos/${year}`;
+//   for (let voting of database) {
+//     const votes = getDataFromFile(`${relativePath}/${voting.id}.json`);
+//     const editedVotes = [];
+//     for (let vote of votes) {
+//       vote = { date: voting.date, votingId: voting.id, ...vote };
+//       editedVotes.push(vote);
+//     }
+//     await persistData(relativePath, `${voting.id}.json`, editedVotes);
+//   }
+//   process.exit();
+// }
