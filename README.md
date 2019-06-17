@@ -15,13 +15,15 @@ base de datos.
 
 ## Documentación
 
+En el siguiente apartado se explican los métodos existentes para descargar contenido. Los proveedores disponibles al día de hoy son "diputados" y "senadores".
+
 ### Descargar listado de votaciones
 
 ```sh
-npm start listado <año>
+npm start votaciones <proveedor> <año>
 ```
 
-Descarga el listado de votaciones del año indicado; y genera un archivo en la ruta `./datos/diputados/<año>.json`.
+Descarga el listado de votaciones del año indicado para el proveedor; y genera un archivo en la ruta `./datos/<proveedor>/<año>.json`.
 Ejemplo de contenido de un archivo generado con este método:
 
 ```js
@@ -50,7 +52,7 @@ Ejemplo de contenido de un archivo generado con este método:
 ### Completar los detalles de cada votación descargada
 
 ```sh
-npm start detalles <año>
+npm start votos <diputados> <año>
 ```
 
 A partir del archivo descargado con el método anterior, generado en `./datos/diputados/<año>.json`, ingresa a la página
@@ -97,7 +99,7 @@ Siguiendo el ejemplo anterior, la votación descargada del listado, ahora tendr�
 ### Importar la información generada en el API
 
 ```sh
-npm start importar <año> [soloEstasVotaciones..]
+npm start importar <proveedor> <año> [soloEstasVotaciones..]
 ```
 
 Este método envía en varias peticiones POST la información generada para cada votación del año indicado. Como contrapartida,
