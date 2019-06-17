@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "dotenv": "^7.0.0",
+    "json2csv": "^4.5.1",
     "node-fetch": "^2.6.0",
     "puppeteer": "^1.17.0",
     "winston": "^3.2.1",
