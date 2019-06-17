@@ -4,18 +4,18 @@ Este scrapper se encarga de ingresar al sitio oficial de Diputados Argentina y d
 sus detalles, así como de enviar esa información en crudo al API encargado de normalizar y guardar esa información en una
 base de datos.
 
-## Antes de empezar
+> **IMPORTANTE**
+>
+> Este proyecto se desarrolló bajo Node 11.14.0 o superior. No se asegura el correcto funcionamiento para versiones anteriores.
+>
+> Si tenés otra versión de Node y no podés reemplazarla por ésta, te recomiendo utilizar un [gestor de versiones como NVM](https://github.com/nvm-sh/nvm).
+> De este modo, podrás cambiar entre versiones sin problemas, ejecutando simplemente `nvm use` desde la raíz del proyecto.
+>
+> Esto es posible por la existencia del archivo `.nvmrc` que le indica a NVM qué versión utilizar en este contexto.
 
-Este proyecto se desarrolló bajo Node 11.14.0 o superior. No se asegura el correcto funcionamiento para versiones anteriores.
+## Documentación
 
-Si tenés otra versión de Node y no podés reemplazarla por ésta, te recomiendo utilizar un [gestor de versiones como NVM](https://github.com/nvm-sh/nvm).
-De este modo, podrás cambiar entre versiones sin problemas, ejecutando simplemente `nvm use` desde la raíz del proyecto.
-
-Esto es posible por la existencia del archivo `.nvmrc` que le indica a NVM qué versión utilizar en este contexto.
-
-# Documentación
-
-## Descargar listado de votaciones
+### Descargar listado de votaciones
 
 ```sh
 npm start listado <año>
@@ -47,7 +47,7 @@ Ejemplo de contenido de un archivo generado con este método:
 ];
 ```
 
-## Completar los detalles de cada votación descargada
+### Completar los detalles de cada votación descargada
 
 ```sh
 npm start detalles <año>
@@ -94,7 +94,7 @@ Siguiendo el ejemplo anterior, la votación descargada del listado, ahora tendr�
 ];
 ```
 
-## Importar la información generada en el API
+### Importar la información generada en el API
 
 ```sh
 npm start importar <año> [soloEstasVotaciones..]
@@ -113,12 +113,12 @@ Se puede indicar que sólo se envíe la información de determinadas votaciones 
 Por ejemplo: `npm start importar 1994 3617 3618 3619` sólo enviará las votaciones de 1994
 con ID 3617, 3618 y 3619.
 
-# ¿Querés ver al bot en acción?
+## ¿Querés ver al bot en acción?
 
 Para ver cómo se inicia el navegador y el bot realiza acción por acción, podés ejecutar el comando en modo de desarrollo
 reemplazando `npm start` por `npm run watch` al inicio de cada método.
 
-# Debugging y desarrollo
+## Debugging y desarrollo
 
 Si te interesa debuggear o desarrollar otros métodos para scrappear contenido, recomiendo utilizar el comando
 `npm run dev` en vez de `npm start`.
@@ -128,7 +128,7 @@ Si utilizás VSCode, este proyecto lo tiene activado por defecto.
 
 Más información: [https://code.visualstudio.com/blogs/2018/07/12/introducing-logpoints-and-auto-attach]()
 
-# TODOs
+## TODOs
 
 - **Typescript.** En especial para definir interfaces que permitan escalar a otros proveedores de una forma estandarizada.
 - Desacoplar y simplificar:
@@ -137,7 +137,7 @@ Más información: [https://code.visualstudio.com/blogs/2018/07/12/introducing-l
 - Integrar tests
 - Logger
 
-# Colaboraciones
+## Colaboraciones
 
 Si te interesa colaborar, contactate conmigo a través de [mi cuenta en Twitter](https://twitter.com/nahuelhds).
 
