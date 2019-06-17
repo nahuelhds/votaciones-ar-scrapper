@@ -1,7 +1,6 @@
-# Scrapper de la web de Diputados Argentina
+# Scrapper de las votaciones de Argentina
 
-Este scrapper se encarga de ingresar al sitio oficial de Diputados Argentina y descargar el listado de votaciones por año,
-sus detalles, así como de enviar esa información en crudo al API encargado de normalizar y guardar esa información en una
+Este scrapper se encarga de ingresar a los sitios oficiales de Diputados y Senadores de Argentina y descargar el listado de votaciones por año, sus detalles, así como de enviar esa información en crudo al API encargado de normalizar y guardar esa información en una
 base de datos.
 
 ## Documentación
@@ -143,7 +142,7 @@ Más información: [https://code.visualstudio.com/blogs/2018/07/12/introducing-l
 
 Si te interesa colaborar, contactate conmigo a través de [mi cuenta en Twitter](https://twitter.com/nahuelhds).
 
-# nahuelhds
+## nahuelhds
 
 Segui mi actividad en:
 
