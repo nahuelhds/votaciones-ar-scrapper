@@ -271,9 +271,9 @@ export default class Scrapper {
    * Analiza y descarga los votos de les legisladores
    * para la votación dada
    */
-  parseVotingsDetails = async (page, voting, downloadRelativePath) => {
+  parseVotingsDetails = async (page, voting, relativePath) => {
     try {
-      const pageUrl = `${VOTINGS_URI}${voting.url}`;
+      const pageUrl = `${VOTINGS_URI}${voting.detailsUrl}`;
       logger.info(`\nINICIO VOTACION #${voting.id}`);
       logger.info(pageUrl);
 
@@ -302,51 +302,55 @@ export default class Scrapper {
       voting.president = await presidentProp.jsonValue();
       logger.info(`Presidente\t\t ${voting.president}`);
 
-      try {
-        const documentUrl = await page.$(`.white-box div:nth-child(3) h5 a`);
-        const documentUrlProp = await documentUrl.getProperty("href");
-        voting.documentUrl = await documentUrlProp.jsonValue();
-        logger.info(`URL del documento\t ${voting.documentUrl}`);
-      } catch (err) {
-        logger.info("No se pudo obtener la URL del documento");
-      }
-
-      const affirmativeCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(1) > ul > h3`
-      );
-      const affirmativeCountProp = await affirmativeCount.getProperty(
-        "textContent"
-      );
-      voting.affirmativeCount = await affirmativeCountProp.jsonValue();
+      voting.affirmativeCount = await this.getCountAsync(page, 1);
       logger.info(`Votos afirmativos\t${voting.affirmativeCount}`);
 
-      const negativeCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(2) > ul > h3`
-      );
-      const negativeCountProp = await negativeCount.getProperty("textContent");
-      voting.negativeCount = await negativeCountProp.jsonValue();
+      voting.negativeCount = await this.getCountAsync(page, 2);
       logger.info(`Votos negativos\t\t${voting.negativeCount}`);
 
-      const abstentionCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(3) > ul > h3`
-      );
-      const abstentionCountProp = await abstentionCount.getProperty(
-        "textContent"
-      );
-      voting.abstentionCount = await abstentionCountProp.jsonValue();
+      voting.abstentionCount = await this.getCountAsync(page, 3);
       logger.info(`Abstenciones\t\t${voting.abstentionCount}`);
 
-      const absentCount = await page.$(
-        `.white-box div:nth-child(3) > div.row > div:nth-child(4) > ul > h3`
-      );
-      const absentCountProp = await absentCount.getProperty("textContent");
-      voting.absentCount = await absentCountProp.jsonValue();
+      voting.absentCount = await this.getCountAsync(page, 4);
       logger.info(`Ausentes\t\t${voting.absentCount}`);
 
-      await this.downloadVotesCsvFromPage(
-        page,
-        `${downloadRelativePath}/${voting.id}`
-      );
+      const rowsSelector = "#myTable > tbody > tr";
+
+      const totalVotes = [];
+
+      let noMorePagesLeft = false;
+      while (!noMorePagesLeft) {
+        try {
+          const votes = await page.$$eval(
+            rowsSelector,
+            this.parsePageVotingVotesRows
+          );
+
+          for (const i in votes) {
+            totalVotes.push({
+              date: voting.date,
+              votingId: voting.id,
+              ...votes[i]
+            });
+          }
+        } catch (error) {
+          logger.error(`No se pudieron tomar los votos. Error: ${error.stack}`);
+        }
+
+        try {
+          noMorePagesLeft = await page.$("#myTable_next.disabled");
+          if (!noMorePagesLeft) {
+            await page.click("#myTable_next");
+          }
+        } catch (error) {
+          logger.error(
+            `No se pudo verificar si existen más páginas por visualizar. Error: ${
+              error.stack
+            }`
+          );
+        }
+      }
+      await persistData(relativePath, `${voting.id}.json`, totalVotes);
     } catch (err) {
       logger.info(err);
     } finally {
@@ -355,6 +359,78 @@ export default class Scrapper {
 
     return voting;
   };
+
+  /**
+   * Obtiene el conteo de afirmativos/negativos/abstenciones/ausentes
+   */
+  getCountAsync = async (page, nthChild) => {
+    const countSelector = `.white-box div:nth-child(3) > div.row > div:nth-child(${nthChild}) > ul > h3`;
+    const countElement = await page.$(countSelector);
+    const countProp = await countElement.getProperty("textContent");
+    return parseInt(await countProp.jsonValue());
+  };
+
+  /**
+   * Descarga el CSV con los votos
+   */
+  parsePageVotingVotesRows = rows =>
+    rows.map(row => {
+      /* eslint-disable no-console */
+      try {
+        // Columnas:
+        // 1. Foto del diputado
+        const photoUrl = row
+          .querySelector("td:nth-child(1) > div > a")
+          .getAttribute("href");
+
+        // const legislatorId = parseInt(profileUrl.replace(/.*\/([0-9]+)/, "$1"));
+        console.log(photoUrl);
+
+        // 2. Diputado
+        const legislator = row
+          .querySelector("td:nth-child(2)")
+          .textContent.trim();
+        console.log(legislator);
+
+        // 3. Bloque
+        const party = row.querySelector("td:nth-child(3)").textContent.trim();
+        console.log(party);
+
+        // 4. Provincia
+        const region = row.querySelector("td:nth-child(4)").textContent.trim();
+        console.log(region);
+
+        // 5. Cómo votó
+        const vote = row.querySelector("td:nth-child(5)").textContent.trim();
+        console.log(vote);
+
+        // 6. Qué dijo
+        const videoUrlElement = row.querySelector(
+          "td:nth-child(6) button[onclick]"
+        );
+        let videoUrl = null;
+        if (videoUrlElement) {
+          const videoUrlId = videoUrlElement
+            .getAttribute("onclick")
+            .replace(/openVideo\('(.*?)'.*\)/g, "$1");
+          videoUrl = `https://www.youtube.com/watch?v=${videoUrlId}`;
+        }
+        console.log(videoUrl);
+
+        const data = {
+          legislator,
+          party,
+          region,
+          vote,
+          photoUrl,
+          videoUrl
+        };
+        return data;
+      } catch (error) {
+        console.error(error);
+      }
+      /* eslint-enable no-console */
+    });
 
   /**
    * Descarga el CSV con los votos
