@@ -101,6 +101,8 @@ export default class Scrapper {
         const title = row
           .querySelector("td:nth-child(2)")
           .textContent.replace("(Ver expedientes)", "")
+          .replace(/\n/g, " ")
+          .replace(/\t/g, " ")
           .trim();
         const type = row.querySelector("td:nth-child(3)").textContent.trim();
         const result = row.querySelector("td:nth-child(4)").textContent.trim();
@@ -196,8 +198,12 @@ export default class Scrapper {
       try {
         const records = await page.$$eval(recordsSelector, records =>
           records.map(record => {
-            const id = record.getAttribute("identificador");
-            const title = record.getAttribute("tituloexpediente");
+            const id = record.getAttribute("identificador").trim();
+            const title = record
+              .getAttribute("tituloexpediente")
+              .replace(/\n/g, " ")
+              .replace(/\t/g, " ")
+              .trim();
             return {
               id,
               title
@@ -229,7 +235,11 @@ export default class Scrapper {
     }
 
     try {
-      await persistData("diputados", `${year}-records.json`, recordsFromYear);
+      await persistData(
+        "diputados/expedientes",
+        `${year}-records.json`,
+        recordsFromYear
+      );
       logger.info(`Expedientes guardados.`);
     } catch (error) {
       logger.info(

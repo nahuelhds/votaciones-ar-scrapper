@@ -11,9 +11,11 @@
     "dev": "babel-node src/index.js --inspect-brk=5858",
     "build": "babel src --out-dir dist",
     "start": "NODE_ENV=production node dist/index.js",
-    "csv-votaciones": "for file in ./$npm_package_config_folder/*.json; do json2csv -i $file >> ./$npm_package_config_folder/votaciones.csv; done",
+    "csv-votaciones": "for file in ./$npm_package_config_folder/*.json; do json2csv -i $file --fields-config=$npm_package_config_fields_config >> ./$npm_package_config_folder/votaciones.csv; done",
     "csv-votos": "for file in ./$npm_package_config_folder/votos/$npm_package_config_year/*.json; do json2csv -i $file >> ./$npm_package_config_folder/votaciones_votos-$npm_package_config_year.csv; done",
-    "diputados-csv-votaciones": "npm run csv-votaciones --app:folder=data/diputados",
+    "csv-expedientes": "for file in ./$npm_package_config_folder/expedientes/*.json; do json2csv -i $file >> ./$npm_package_config_folder/votaciones_expedientes.csv; done",
+    "diputados-csv-votaciones": "npm run csv-votaciones --app:folder=data/diputados --app:fields_config=src/providers/ar-diputados/votingsCsv.json",
+    "diputados-csv-expedientes": "npm run csv-expedientes --app:folder=data/diputados",
     "senadores-csv-votaciones": "npm run csv-votaciones --app:folder=data/senadores",
     "senadores-csv-votos": "npm run csv-votos --app:folder=data/senadores"
   },
