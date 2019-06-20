@@ -92,8 +92,11 @@ export default class Scrapper {
           .querySelector("td > center > button:nth-child(2)")
           .getAttribute("urldetalle");
 
-        const id = detailsUrl.replace("/votacion/", "");
-        const date = row.getAttribute("data-date");
+        const id = parseInt(detailsUrl.replace("/votacion/", ""));
+        const date = new Date(parseInt(row.getAttribute("data-date")) * 1000)
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ");
         const title = row
           .querySelector("td:nth-child(2)")
           .textContent.replace("(Ver expedientes)", "")
@@ -116,7 +119,7 @@ export default class Scrapper {
         let videoUrl = null;
         if (videoUrlAttribute != null) {
           const videoUrlId = videoUrlAttribute.replace(
-            /openVideo\('(.*?)', '', ''\)/g,
+            /openVideo\('(.*?)'.*\)/g,
             "$1"
           );
 
