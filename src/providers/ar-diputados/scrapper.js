@@ -316,41 +316,23 @@ export default class Scrapper {
 
       const rowsSelector = "#myTable > tbody > tr";
 
-      const totalVotes = [];
+      try {
+        const votes = await page.$$eval(
+          rowsSelector,
+          this.parsePageVotingVotesRows
+        );
 
-      let noMorePagesLeft = false;
-      while (!noMorePagesLeft) {
-        try {
-          const votes = await page.$$eval(
-            rowsSelector,
-            this.parsePageVotingVotesRows
-          );
-
-          for (const i in votes) {
-            totalVotes.push({
-              date: voting.date,
-              votingId: voting.id,
-              ...votes[i]
-            });
-          }
-        } catch (error) {
-          logger.error(`No se pudieron tomar los votos. Error: ${error.stack}`);
+        for (const i in votes) {
+          votes[i] = {
+            date: voting.date,
+            votingId: voting.id,
+            ...votes[i]
+          };
         }
-
-        try {
-          noMorePagesLeft = await page.$("#myTable_next.disabled");
-          if (!noMorePagesLeft) {
-            await page.click("#myTable_next");
-          }
-        } catch (error) {
-          logger.error(
-            `No se pudo verificar si existen más páginas por visualizar. Error: ${
-              error.stack
-            }`
-          );
-        }
+        await persistData(relativePath, `${voting.id}.json`, votes);
+      } catch (error) {
+        logger.error(`No se pudieron tomar ni guardar los votos. Error: ${error.stack}`);
       }
-      await persistData(relativePath, `${voting.id}.json`, totalVotes);
     } catch (err) {
       logger.info(err);
     } finally {
@@ -371,10 +353,17 @@ export default class Scrapper {
   };
 
   /**
-   * Descarga el CSV con los votos
+   * Lee la tabla de votos y devuelve el arreglo
    */
-  parsePageVotingVotesRows = rows =>
-    rows.map(row => {
+  parsePageVotingVotesRows = rows => {
+    // Ejecuto jQuery DataTables para que muestre todos los registros de una
+    /* eslint-disable no-console */
+    // eslint-disable-next-line
+    jQuery("#myTable")
+      .DataTable()
+      .page.len(300)
+      .draw();
+    return rows.map(row => {
       /* eslint-disable no-console */
       try {
         // Columnas:
@@ -431,6 +420,7 @@ export default class Scrapper {
       }
       /* eslint-enable no-console */
     });
+  };
 
   /**
    * Descarga el CSV con los votos
