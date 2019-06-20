@@ -176,10 +176,11 @@ export default class Scrapper {
       try {
         const recordsElement = await page.$(recordsSelector);
         if (!recordsElement) {
+          logger.info(`No se cargaron los expedientes para #${voting.id}`);
           const linkSelector = `${rowsSelector}:nth-child(${nth}) > td:nth-child(2) a[id]`;
           const linkElement = await page.$(linkSelector);
-          if (!linkElement) {
-            logger.info(`La votación ${voting.id} no tiene expedientes`);
+          if (linkElement) {
+            logger.info(`No hay nada que clickear`);
           } else {
             // Reintento con todos los expedientes de nuevo
             await this.clickAllFilesLink(page, rowsSelector);
@@ -204,16 +205,20 @@ export default class Scrapper {
           })
         );
         voting.records = records;
-        logger.info(
-          `Expedientes encontrados para la votación #${voting.id}: ${
-            records.length
-          }`
-        );
+        if (records.length) {
+          logger.info(
+            `Expedientes encontrados para la votación #${voting.id}: ${
+              records.length
+            }`
+          );
 
-        records.map(record => {
-          record.votingId = voting.id;
-          recordsFromYear.push(record);
-        });
+          records.map(record => {
+            record.votingId = voting.id;
+            recordsFromYear.push(record);
+          });
+        } else {
+          logger.info(`La votación ${voting.id} no tiene expedientes`);
+        }
       } catch (error) {
         logger.error(
           `No se pudieron leer los expedientes de la votación #${
