@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import logger from "services/logger";
+import logger, { pageConsoleLogger } from "services/logger";
 import {
   DOWNLOAD_PATH,
   getFilesFromFolder,
@@ -10,8 +10,6 @@ import {
 const __DEV__ = process.env.NODE_ENV !== "production";
 const VOTINGS_URI = "https://votaciones.hcdn.gob.ar";
 
-const PAGE_LOG = false;
-
 let puppeteerConfig = {};
 if (__DEV__) {
   puppeteerConfig = {
@@ -20,6 +18,10 @@ if (__DEV__) {
     slowMo: 100 // slow down by 250ms,
   };
 }
+const pageViewport = {
+  width: 1200,
+  height: 900
+};
 
 export default class Scrapper {
   browser;
@@ -49,15 +51,10 @@ export default class Scrapper {
     try {
       logger.info(`Abriendo nueva pestaña`);
       const page = await this.browser.newPage();
-      if (__DEV__ && PAGE_LOG) {
-        page.on("console", msg => {
-          const text = msg.text();
-          if (text.indexOf("Failed to load resource") > -1) {
-            return;
-          }
-          logger.log(`PAGE LOG: ${text}`);
-        });
+      if (__DEV__) {
+        page.setViewport(pageViewport);
       }
+      page.on("console", pageConsoleLogger);
       return page;
     } catch (error) {
       throw `Ocurrió un error al crear una página. Error: ${error}`;
@@ -91,11 +88,11 @@ export default class Scrapper {
         row.removeAttribute("style");
 
         // Date. Format: new Date(numero * 1000)
-        const url = row
+        const detailsUrl = row
           .querySelector("td > center > button:nth-child(2)")
           .getAttribute("urldetalle");
 
-        const id = url.replace("/votacion/", "");
+        const id = detailsUrl.replace("/votacion/", "");
         const date = row.getAttribute("data-date");
         const title = row
           .querySelector("td:nth-child(2)")
@@ -104,13 +101,37 @@ export default class Scrapper {
         const type = row.querySelector("td:nth-child(3)").textContent.trim();
         const result = row.querySelector("td:nth-child(4)").textContent.trim();
 
+        // PDF
+        // onclick="updatePdf('https://votaciones.hcdn.gob.ar/proxy/pdf/1993/111PO06_31_R31.pdf','111','6','31')"
+        const recordUrl = row
+          .querySelector("td > center > button:nth-child(1)")
+          .getAttribute("onclick")
+          .replace(/.*'(https:\/\/votaciones.*?)'.*/g, "$1");
+
+        // Video
+        // onclick="openVideo('1IIlS4l-xOg', '', '')"
+        const videoUrlAttribute = row
+          .querySelector("td > center > button:nth-child(3)")
+          .getAttribute("onclick");
+        let videoUrl = null;
+        if (videoUrlAttribute != null) {
+          const videoUrlId = videoUrlAttribute.replace(
+            /openVideo\('(.*?)', '', ''\)/g,
+            "$1"
+          );
+
+          videoUrl = `https://www.youtube.com/watch?v=${videoUrlId}`;
+        }
+
         const voting = {
           id,
           date,
           title,
           type,
           result,
-          url
+          recordUrl,
+          detailsUrl,
+          videoUrl
         };
 
         return voting;
