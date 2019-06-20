@@ -8,18 +8,24 @@ const defaultYear = now.getFullYear();
 
 yargs
   .command({
-    command: "votaciones <provider> <anio>",
+    command: "votaciones <provider> <anio> [anioMax]",
     desc: "Descarga el listado de votaciones de <provider> del <anio> indicado",
     builder: yargs => yargs.default("anio", defaultYear),
-    handler: argv => parseVotingsFromYear(argv.provider, argv.anio)
+    handler: argv =>
+      parseVotingsFromYear(argv.provider, argv.anio, argv.anioMax)
   })
   .command({
-    command: "votos <provider> <anio> [anioMax]",
+    command: "votos <provider> <anio> [anioMax] [soloEstasVotaciones..]",
     desc:
       "Descarga los votos cada votación de <provider> realizada durante el <anio> indicado",
     builder: yargs => yargs.default("anio", defaultYear),
     handler: argv =>
-      parseVotingsDetailsFromYear(argv.provider, argv.anio, argv.anioMax)
+      parseVotingsDetailsFromYear(
+        argv.provider,
+        argv.anio,
+        argv.anioMax,
+        argv.soloEstasVotaciones
+      )
   })
   .command({
     command: "importar <provider> <anio> [anioMax] [soloEstasVotaciones..]",
@@ -66,11 +72,7 @@ async function parseVotingsFromYear(providerType, yearMin, yearMax = null) {
       logger.info("INICIO DEL ANALISIS DEL AÑO", year);
       await scrapper.start();
       try {
-        const votings = await scrapper.parseVotingsFromYear(year);
-        if (votings.length) {
-          const path = await persistData(providerType, `${year}.json`, votings);
-          logger.info(`Votaciones guardadas. Archivo: ${path}`);
-        }
+        await scrapper.parseVotingsFromYear(year);
       } catch (error) {
         logger.error(`parseVotingsFromYear: ${error.message}`);
       }
@@ -87,7 +89,8 @@ async function parseVotingsFromYear(providerType, yearMin, yearMax = null) {
 async function parseVotingsDetailsFromYear(
   providerType,
   yearMin,
-  yearMax = null
+  yearMax = null,
+  onlyTheseVotings = []
 ) {
   if (!yearMax) {
     yearMax = yearMin;
@@ -103,12 +106,17 @@ async function parseVotingsDetailsFromYear(
         const page = await scrapper.createPage();
         const editedVotings = [];
         for (let voting of database) {
-          const editedVoting = await scrapper.parseVotingsDetails(
-            page,
-            voting,
-            `${providerType}/votos/${year}`
-          );
-
+          let editedVoting = voting;
+          if (
+            !onlyTheseVotings.length ||
+            onlyTheseVotings.indexOf(voting.id) > -1
+          ) {
+            editedVoting = await scrapper.parseVotingsDetails(
+              page,
+              voting,
+              `${providerType}/votos/${year}`
+            );
+          }
           editedVotings.push(editedVoting);
         }
 

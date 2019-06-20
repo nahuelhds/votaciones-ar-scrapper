@@ -143,18 +143,18 @@ export default class Scrapper {
         return voting;
       });
     });
-    logger.info(
-      `Análisis de votaciones finalizada. Cantidad: ${votings.length}`
-    );
 
     try {
-      await persistData("diputados", `${year}.json`, votings);
-      logger.info(`Votaciones guardadas.`);
+      const path = await persistData("diputados", `${year}.json`, votings);
+      logger.info(`Votaciones guardadas. Archivo: ${path}`);
     } catch (error) {
       logger.info(
         `No se pudo guardar el archivo de votaciones. Error: ${error.stack}`
       );
     }
+    logger.info(
+      `Análisis de votaciones finalizada. Cantidad: ${votings.length}`
+    );
 
     logger.info(`Analizando expedientes...`);
 
@@ -235,18 +235,18 @@ export default class Scrapper {
     }
 
     try {
-      await persistData(
+      const path = await persistData(
         "diputados/expedientes",
         `${year}-records.json`,
         recordsFromYear
       );
-      logger.info(`Expedientes guardados.`);
+      logger.info(`Expedientes guardados. Archivo: ${path}`);
     } catch (error) {
       logger.info(
         `No se pudo guardar el archivo de expedientes. Error: ${error.stack}`
       );
     }
-    logger.info(`Análisis de registros finalizado`);
+    logger.info(`Análisis de expedientes finalizado`);
 
     await page.close();
     return votings;
