@@ -1,1 +1,18 @@
-["id", "date", "title", "type", "result", "recordUrl", "detailsUrl", "videoUrl"]
+[
+  "id",
+  "date",
+  "period",
+  "meeting",
+  "record",
+  "title",
+  "type",
+  "president",
+  "affirmativeCount",
+  "negativeCount",
+  "abstentionCount",
+  "absentCount",
+  "result",
+  "recordUrl",
+  "detailsUrl",
+  "videoUrl"
+]
