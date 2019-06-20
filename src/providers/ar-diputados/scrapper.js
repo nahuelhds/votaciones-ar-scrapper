@@ -4,7 +4,8 @@ import {
   DOWNLOAD_PATH,
   getFilesFromFolder,
   dirExistsSync,
-  createDirRecursively
+  createDirRecursively,
+  persistData
 } from "services/fs";
 
 const __DEV__ = process.env.NODE_ENV !== "production";
@@ -14,7 +15,7 @@ let puppeteerConfig = {};
 if (__DEV__) {
   puppeteerConfig = {
     headless: !__DEV__,
-    devtools: __DEV__,
+    devtools: !__DEV__,
     slowMo: 100 // slow down by 250ms,
   };
 }
@@ -144,21 +145,54 @@ export default class Scrapper {
       `Análisis de votaciones finalizada. Cantidad: ${votings.length}`
     );
 
-    logger.info(`Analizando registros...`);
+    try {
+      await persistData("diputados", `${year}.json`, votings);
+      logger.info(`Votaciones guardadas.`);
+    } catch (error) {
+      logger.info(
+        `No se pudo guardar el archivo de votaciones. Error: ${error.stack}`
+      );
+    }
 
+    logger.info(`Analizando expedientes...`);
+
+    try {
+      await this.clickAllFilesLink(page, rowsSelector);
+    } catch (error) {
+      logger.error(
+        `No se pudieron abrir los expedientes del año requerido. Error: ${
+          error.stack
+        }`
+      );
+    }
+
+    const recordsFromYear = [];
     for (const index in votings) {
       let voting = votings[index];
       const nth = parseInt(index) + 1;
-      const linkSelector = `${rowsSelector}:nth-child(${nth}) > td:nth-child(2) a[id]`;
       const recordsSelector = `${rowsSelector}:nth-child(${nth}) > td:nth-child(2) div[tituloexpediente]`;
+      // Si el elemento no existe es porque el click masivo no se realizó ok, por lo que
+      // es necesario realizarlo nuevamente de forma particular (y esperar el feedback)
       try {
-        const link = await page.$(linkSelector);
-        const linkTextProp = await link.getProperty("textContent");
-        const linkText = await linkTextProp.jsonValue();
-        if (linkText.indexOf("Ver") > -1) {
-          await link.click();
-          await page.waitForSelector(recordsSelector);
+        const recordsElement = await page.$(recordsSelector);
+        if (!recordsElement) {
+          const linkSelector = `${rowsSelector}:nth-child(${nth}) > td:nth-child(2) a[id]`;
+          const linkElement = await page.$(linkSelector);
+          if (!linkElement) {
+            logger.info(`La votación ${voting.id} no tiene expedientes`);
+          } else {
+            // Reintento con todos los expedientes de nuevo
+            await this.clickAllFilesLink(page, rowsSelector);
+          }
         }
+      } catch (error) {
+        logger.error(
+          `No se pudo abrir el expediente de la fila ${nth} para la votación ${
+            voting.id
+          }`
+        );
+      }
+      try {
         const records = await page.$$eval(recordsSelector, records =>
           records.map(record => {
             const id = record.getAttribute("identificador");
@@ -170,19 +204,52 @@ export default class Scrapper {
           })
         );
         voting.records = records;
-        logger.warn(
-          `Registros de la votación #${voting.id}. Cantidad:`,
-          records.length
+        logger.info(
+          `Expedientes encontrados para la votación #${voting.id}: ${
+            records.length
+          }`
         );
+
+        records.map(record => {
+          record.votingId = voting.id;
+          recordsFromYear.push(record);
+        });
       } catch (error) {
-        logger.warn(`Votación #${voting.id} no tiene registros`);
-        voting.records = [];
+        logger.error(
+          `No se pudieron leer los expedientes de la votación #${
+            voting.id
+          }. Error: ${error.stack}`
+        );
       }
+    }
+
+    try {
+      await persistData("diputados", `${year}-records.json`, recordsFromYear);
+      logger.info(`Expedientes guardados.`);
+    } catch (error) {
+      logger.info(
+        `No se pudo guardar el archivo de expedientes. Error: ${error.stack}`
+      );
     }
     logger.info(`Análisis de registros finalizado`);
 
     await page.close();
     return votings;
+  };
+
+  clickAllFilesLink = async (page, rowsSelector) => {
+    const linkSelector = `${rowsSelector} > td:nth-child(2) a[id]`;
+    await page.$$eval(linkSelector, async links => {
+      /* eslint-disable no-console */
+      const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+      for (const link of links) {
+        if (link.textContent.indexOf("Ver") > -1) {
+          await sleep(500); // minimo 500ms
+          link.click();
+        }
+      }
+      /* eslint-enable no-console */
+    });
   };
 
   /**
