@@ -317,6 +317,7 @@ export default class Scrapper {
       const rowsSelector = "#myTable > tbody > tr";
 
       try {
+        await page.evaluate(this.showAllRows);
         const votes = await page.$$eval(
           rowsSelector,
           this.parsePageVotingVotesRows
@@ -331,7 +332,9 @@ export default class Scrapper {
         }
         await persistData(relativePath, `${voting.id}.json`, votes);
       } catch (error) {
-        logger.error(`No se pudieron tomar ni guardar los votos. Error: ${error.stack}`);
+        logger.error(
+          `No se pudieron tomar ni guardar los votos. Error: ${error.stack}`
+        );
       }
     } catch (err) {
       logger.info(err);
@@ -352,10 +355,7 @@ export default class Scrapper {
     return parseInt(await countProp.jsonValue());
   };
 
-  /**
-   * Lee la tabla de votos y devuelve el arreglo
-   */
-  parsePageVotingVotesRows = rows => {
+  showAllRows = () => {
     // Ejecuto jQuery DataTables para que muestre todos los registros de una
     /* eslint-disable no-console */
     // eslint-disable-next-line
@@ -363,7 +363,13 @@ export default class Scrapper {
       .DataTable()
       .page.len(300)
       .draw();
-    return rows.map(row => {
+  };
+
+  /**
+   * Lee la tabla de votos y devuelve el arreglo
+   */
+  parsePageVotingVotesRows = rows =>
+    rows.map(row => {
       /* eslint-disable no-console */
       try {
         // Columnas:
@@ -420,7 +426,6 @@ export default class Scrapper {
       }
       /* eslint-enable no-console */
     });
-  };
 
   /**
    * Descarga el CSV con los votos
