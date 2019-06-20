@@ -14,19 +14,21 @@ yargs
     handler: argv => parseVotingsFromYear(argv.provider, argv.anio)
   })
   .command({
-    command: "votos <provider> <anio>",
+    command: "votos <provider> <anio> [anioMax]",
     desc:
       "Descarga los votos cada votación de <provider> realizada durante el <anio> indicado",
     builder: yargs => yargs.default("anio", defaultYear),
-    handler: argv => parseVotingsDetailsFromYear(argv.provider, argv.anio)
+    handler: argv =>
+      parseVotingsDetailsFromYear(argv.provider, argv.anio, argv.anioMax)
   })
   .command({
-    command: "importar <provider> <anio> [soloEstasVotaciones..]",
+    command: "importar <provider> <anio> [anioMax] [soloEstasVotaciones..]",
     desc: "Importa todo lo descargado de <provider> para el <anio> en el API",
     builder: yargs => yargs.default("anio", defaultYear),
     handler: argv =>
       getProvider(argv.provider).api.sendYear(
         argv.anio,
+        argv.anioMax,
         argv.soloEstasVotaciones
       )
   })
@@ -53,66 +55,80 @@ function getProvider(providerType) {
   return provider.default;
 }
 
-async function parseVotingsFromYear(providerType, year) {
+async function parseVotingsFromYear(providerType, yearMin, yearMax = null) {
+  if (!yearMax) {
+    yearMax = yearMin;
+  }
   const provider = getProvider(providerType);
   const scrapper = new provider.scrapper();
-  try {
-    logger.info("INICIO DEL ANALISIS DEL AÑO", year);
-    await scrapper.start();
+  for (let year = yearMin; year <= yearMax; year++) {
     try {
-      const votings = await scrapper.parseVotingsFromYear(year);
-      if (votings.length) {
-        const path = await persistData(providerType, `${year}.json`, votings);
-        logger.info(`Votaciones guardadas. Archivo: ${path}`);
+      logger.info("INICIO DEL ANALISIS DEL AÑO", year);
+      await scrapper.start();
+      try {
+        const votings = await scrapper.parseVotingsFromYear(year);
+        if (votings.length) {
+          const path = await persistData(providerType, `${year}.json`, votings);
+          logger.info(`Votaciones guardadas. Archivo: ${path}`);
+        }
+      } catch (error) {
+        logger.error(`parseVotingsFromYear: ${error.message}`);
       }
-    } catch (error) {
-      logger.error(`parseVotingsFromYear: ${error.message}`);
+    } catch (err) {
+      logger.error(`Ocurrió un error general durante el proceso ${err}`);
+    } finally {
+      await scrapper.finish();
+      logger.info(`FIN DEL ANALISIS DEL AÑO ${year}`);
     }
-  } catch (err) {
-    logger.error(`Ocurrió un error general durante el proceso ${err}`);
-  } finally {
-    await scrapper.finish();
-    logger.info(`FIN DEL ANALISIS DEL AÑO ${year}`);
-    process.exit();
   }
+  process.exit();
 }
 
-async function parseVotingsDetailsFromYear(providerType, year) {
+async function parseVotingsDetailsFromYear(
+  providerType,
+  yearMin,
+  yearMax = null
+) {
+  if (!yearMax) {
+    yearMax = yearMin;
+  }
   const provider = getProvider(providerType);
   const scrapper = new provider.scrapper();
-  try {
-    logger.info(`INICIO ANALISIS DE VOTACIONES DEL AÑO ${year}`);
+  for (let year = yearMin; year <= yearMax; year++) {
     try {
-      await scrapper.start();
-      const database = getDataFromFile(`${providerType}/${year}.json`);
-      const page = await scrapper.createPage();
-      const editedVotings = [];
-      for (let voting of database) {
-        const editedVoting = await scrapper.parseVotingsDetails(
-          page,
-          voting,
-          `${providerType}/votos/${year}`
+      logger.info(`INICIO ANALISIS DE VOTACIONES DEL AÑO ${year}`);
+      try {
+        await scrapper.start();
+        const database = getDataFromFile(`${providerType}/${year}.json`);
+        const page = await scrapper.createPage();
+        const editedVotings = [];
+        for (let voting of database) {
+          const editedVoting = await scrapper.parseVotingsDetails(
+            page,
+            voting,
+            `${providerType}/votos/${year}`
+          );
+
+          editedVotings.push(editedVoting);
+        }
+
+        const path = await persistData(
+          providerType,
+          `${year}.json`,
+          editedVotings
         );
-
-        editedVotings.push(editedVoting);
+        logger.info(`Votaciones actualizadas. Archivo: ${path}`);
+      } catch (err) {
+        logger.error(err.stack);
       }
-
-      const path = await persistData(
-        providerType,
-        `${year}.json`,
-        editedVotings
-      );
-      logger.info(`Votaciones actualizadas. Archivo: ${path}`);
     } catch (err) {
       logger.error(err.stack);
+    } finally {
+      await scrapper.finish();
+      logger.info(`FIN ANALISIS DE VOTACIONES DEL AÑO: ${year}`);
     }
-  } catch (err) {
-    logger.error(err.stack);
-  } finally {
-    await scrapper.finish();
-    logger.info(`FIN ANALISIS DE VOTACIONES DEL AÑO: ${year}`);
-    process.exit();
   }
+  process.exit();
 }
 
 // async function fillVotingsDetailsFromYear(providerType, year) {
