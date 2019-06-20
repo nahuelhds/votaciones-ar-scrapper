@@ -16,6 +16,7 @@
     "csv-expedientes": "for file in ./$npm_package_config_folder/expedientes/*.json; do json2csv -i $file >> ./$npm_package_config_folder/votaciones_expedientes.csv; done",
     "diputados-csv-votaciones": "npm run csv-votaciones --app:folder=data/diputados --app:fields_config=src/providers/ar-diputados/votingsCsv.json",
     "diputados-csv-expedientes": "npm run csv-expedientes --app:folder=data/diputados",
+    "diputados-csv-votos": "npm run csv-votos --app:folder=data/diputados",
     "senadores-csv-votaciones": "npm run csv-votaciones --app:folder=data/senadores",
     "senadores-csv-votos": "npm run csv-votos --app:folder=data/senadores"
   },
