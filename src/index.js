@@ -28,13 +28,12 @@ yargs
       )
   })
   .command({
-    command: "importar <provider> <anio> [anioMax] [soloEstasVotaciones..]",
+    command: "importar <provider> <anio> [soloEstasVotaciones..]",
     desc: "Importa todo lo descargado de <provider> para el <anio> en el API",
     builder: yargs => yargs.default("anio", defaultYear),
     handler: argv =>
       getProvider(argv.provider).api.sendYear(
         argv.anio,
-        argv.anioMax,
         argv.soloEstasVotaciones
       )
   })

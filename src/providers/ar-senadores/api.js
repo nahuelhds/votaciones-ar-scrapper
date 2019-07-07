@@ -1,10 +1,14 @@
 import { post } from "services/http";
-import { getContentFromFileInFolder, getDataFromFile } from "services/fs";
+import {
+  getFilesFromFolder,
+  getContentsFromFile,
+  getDataFromFile,
+  DOWNLOAD_PATH
+} from "services/fs";
 import logger from "services/logger";
 
-const API_ENDPOINT = "api/import/ar/deputies";
+const API_ENDPOINT = "api/import/ar/senators";
 
-const SAVE_RECORDS = true;
 const SAVE_VOTES = true;
 
 /**
@@ -18,10 +22,12 @@ const SAVE_VOTES = true;
  * @param {array} onlyTheseVotings
  */
 export const sendYear = async (year, onlyTheseVotings = []) => {
-  const votings = getDataFromFile(`diputados/${year}.json`);
+  const votings = getDataFromFile(`senadores/${year}.json`);
   for (let originalVoting of votings) {
     if (
-      ["AFIRMATIVO", "NEGATIVO", "EMPATE"].indexOf(originalVoting.result) > -1
+      ["AFIRMATIVO", "NEGATIVO", "EMPATE", "LEV. VOT."].indexOf(
+        originalVoting.result
+      ) > -1
     ) {
       if (
         onlyTheseVotings.length &&
@@ -45,59 +51,41 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           );
         }
 
-        const voting = await votingResponse.json();
-        if (SAVE_RECORDS) {
-          const recordsEndpoint = `${API_ENDPOINT}/votings/${
-            voting.id
-          }/records`;
-          const recordsResponse = await post(
-            recordsEndpoint,
-            originalVoting.records
-          );
-          logger.info(
-            recordsResponse.status,
-            recordsResponse.statusText,
-            originalVoting.id,
-            recordsEndpoint
-          );
-
-          if (recordsResponse.status >= 400) {
-            logger.warn(
-              `Falló la creación de los registros de la votación #${
-                originalVoting.id
-              }`
-            );
-          }
-        }
-
         if (SAVE_VOTES) {
+          const voting = await votingResponse.json();
           const votesEndpoint = `${API_ENDPOINT}/votings/${voting.id}/votes`;
-          const votesResponse = await post(
-            votesEndpoint,
-            getContentFromFileInFolder(`diputados/votes/${originalVoting.id}`)
+          const votesFiles = getFilesFromFolder(
+            `${DOWNLOAD_PATH}/senadores/votos/${year}`
           );
-          logger.info(
-            votesResponse.status,
-            votesResponse.statusText,
-            originalVoting.id,
-            votesEndpoint
-          );
-
-          if (votesResponse.status >= 400) {
-            logger.warn(
-              `Falló el registro de las votaciones de la votación #${
-                originalVoting.id
-              }`
+          for (const file of votesFiles) {
+            const votes = JSON.parse(
+              getContentsFromFile(`/senadores/votos/${year}/${file}`)
             );
+            const votesResponse = await post(votesEndpoint, votes);
+            logger.info(
+              votesResponse.status,
+              votesResponse.statusText,
+              originalVoting.id,
+              votesEndpoint
+            );
+
+            if (votesResponse.status >= 400) {
+              logger.warn(
+                `Falló el registro de las votaciones de la votación #${
+                  originalVoting.id
+                }`
+              );
+            }
           }
         }
       } catch (err) {
-        logger.warn(err);
+        logger.warn(err.stack);
       }
     } else {
       logger.error(
-        `La votación #${originalVoting.id} no tiene un resultado esperado`,
-        originalVoting.result
+        `La votación #${originalVoting.id} no tiene un resultado esperado: ${
+          originalVoting.result
+        }`
       );
     }
   }
