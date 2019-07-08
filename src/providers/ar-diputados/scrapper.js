@@ -374,9 +374,10 @@ export default class Scrapper {
       try {
         // Columnas:
         // 1. Foto del diputado
-        const photoUrl = row
-          .querySelector("td:nth-child(1) > div > a")
-          .getAttribute("href");
+        const photoUrlElement = row.querySelector("td:nth-child(1) > div > a");
+        const photoUrl = photoUrlElement
+          ? photoUrlElement.getAttribute("href")
+          : null;
 
         // const legislatorId = parseInt(profileUrl.replace(/.*\/([0-9]+)/, "$1"));
         console.log(photoUrl);
