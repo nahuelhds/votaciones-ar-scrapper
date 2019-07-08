@@ -34,10 +34,12 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
         const votingEndpoint = `${API_ENDPOINT}/voting`;
         const votingResponse = await post(votingEndpoint, originalVoting);
         logger.info(
-          votingResponse.status,
-          votingResponse.statusText,
-          originalVoting.id,
-          votingEndpoint
+          [
+            votingResponse.status,
+            votingResponse.statusText,
+            originalVoting.id,
+            votingEndpoint
+          ].join(" ")
         );
 
         if (votingResponse.status >= 400) {
@@ -56,14 +58,16 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           );
           const votesResponse = await post(votesEndpoint, votes);
           logger.info(
-            votesResponse.status,
-            votesResponse.statusText,
-            originalVoting.id,
-            votesEndpoint
+            [
+              votesResponse.status,
+              votesResponse.statusText,
+              originalVoting.id,
+              votesEndpoint
+            ].join(" ")
           );
 
           if (votesResponse.status >= 400) {
-            logger.warn(
+            logger.error(
               `Falló el registro de las votaciones de la votación #${
                 originalVoting.id
               }`
@@ -71,7 +75,7 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           }
         }
       } catch (err) {
-        logger.warn(err.stack);
+        logger.error(err.stack);
       }
     } else {
       logger.error(
