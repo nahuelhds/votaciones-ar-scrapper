@@ -1,10 +1,9 @@
 import { post } from "services/http";
-import { getContentFromFileInFolder, getDataFromFile } from "services/fs";
+import { getContentsFromFile, getDataFromFile } from "services/fs";
 import logger from "services/logger";
 
-const API_ENDPOINT = "api/import/ar/deputies";
+const API_ENDPOINT = "api/import/ar/senators";
 
-const SAVE_RECORDS = true;
 const SAVE_VOTES = true;
 
 /**
@@ -18,10 +17,17 @@ const SAVE_VOTES = true;
  * @param {array} onlyTheseVotings
  */
 export const sendYear = async (year, onlyTheseVotings = []) => {
-  const votings = getDataFromFile(`diputados/${year}.json`);
+  const votings = getDataFromFile(`senadores/${year}.json`);
   for (let originalVoting of votings) {
     if (
-      ["AFIRMATIVO", "NEGATIVO", "EMPATE"].indexOf(originalVoting.result) > -1
+      [
+        "AFIRMATIVO",
+        "NEGATIVO",
+        "EMPATE",
+        "LEV. VOT.",
+        "CANCELADA LEV.VOT.",
+        "AUSENTE"
+      ].indexOf(originalVoting.result) > -1
     ) {
       if (
         onlyTheseVotings.length &&
@@ -33,10 +39,12 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
         const votingEndpoint = `${API_ENDPOINT}/voting`;
         const votingResponse = await post(votingEndpoint, originalVoting);
         logger.info(
-          votingResponse.status,
-          votingResponse.statusText,
-          originalVoting.id,
-          votingEndpoint
+          [
+            votingResponse.status,
+            votingResponse.statusText,
+            originalVoting.id,
+            votingEndpoint
+          ].join(" ")
         );
 
         if (votingResponse.status >= 400) {
@@ -45,59 +53,43 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
           );
         }
 
-        const voting = await votingResponse.json();
-        if (SAVE_RECORDS) {
-          const recordsEndpoint = `${API_ENDPOINT}/votings/${
-            voting.id
-          }/records`;
-          const recordsResponse = await post(
-            recordsEndpoint,
-            originalVoting.records
-          );
-          logger.info(
-            recordsResponse.status,
-            recordsResponse.statusText,
-            originalVoting.id,
-            recordsEndpoint
-          );
-
-          if (recordsResponse.status >= 400) {
-            logger.warn(
-              `Falló la creación de los registros de la votación #${
-                originalVoting.id
-              }`
-            );
-          }
-        }
-
         if (SAVE_VOTES) {
-          const votesEndpoint = `${API_ENDPOINT}/votings/${voting.id}/votes`;
-          const votesResponse = await post(
-            votesEndpoint,
-            getContentFromFileInFolder(`diputados/votes/${originalVoting.id}`)
+          const voting = await votingResponse.json();
+          const votesEndpoint = `${API_ENDPOINT}/voting/${voting.id}/votes`;
+          const originalVotes = JSON.parse(
+            getContentsFromFile(
+              `/senadores/votos/${year}/${originalVoting.id}.json`
+            )
           );
+          const votesResponse = await post(votesEndpoint, originalVotes);
+          const votes = await votesResponse.json();
           logger.info(
-            votesResponse.status,
-            votesResponse.statusText,
-            originalVoting.id,
-            votesEndpoint
+            [
+              votesResponse.status,
+              votesResponse.statusText,
+              originalVoting.id,
+              voting.id,
+              votes.length,
+              votesEndpoint
+            ].join(" ")
           );
 
           if (votesResponse.status >= 400) {
-            logger.warn(
-              `Falló el registro de las votaciones de la votación #${
+            logger.error(
+              `Falló el registro de los votos de la votación #${
                 originalVoting.id
               }`
             );
           }
         }
       } catch (err) {
-        logger.warn(err);
+        logger.error(err.stack);
       }
     } else {
       logger.error(
-        `La votación #${originalVoting.id} no tiene un resultado esperado`,
-        originalVoting.result
+        `La votación #${originalVoting.id} no tiene un resultado esperado: ${
+          originalVoting.result
+        }`
       );
     }
   }

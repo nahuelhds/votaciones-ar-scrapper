@@ -9,6 +9,8 @@ const METHOD_DELETE = "DELETE";
 export const req = (method, endpoint, params = null, headers = {}) => {
   const body = params !== null ? JSON.stringify(params) : null;
   const uri = `${process.env.API_URI}/${endpoint}`;
+  //eslint-disable-next-line
+  // console.log(process.env.API_URI);
   return fetch(uri, {
     method,
     headers: {
