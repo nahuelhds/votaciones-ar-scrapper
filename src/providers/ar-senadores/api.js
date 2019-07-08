@@ -51,24 +51,27 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
         if (SAVE_VOTES) {
           const voting = await votingResponse.json();
           const votesEndpoint = `${API_ENDPOINT}/voting/${voting.id}/votes`;
-          const votes = JSON.parse(
+          const originalVotes = JSON.parse(
             getContentsFromFile(
               `/senadores/votos/${year}/${originalVoting.id}.json`
             )
           );
-          const votesResponse = await post(votesEndpoint, votes);
+          const votesResponse = await post(votesEndpoint, originalVotes);
+          const votes = await votesResponse.json();
           logger.info(
             [
               votesResponse.status,
               votesResponse.statusText,
               originalVoting.id,
+              voting.id,
+              votes.length,
               votesEndpoint
             ].join(" ")
           );
 
           if (votesResponse.status >= 400) {
             logger.error(
-              `Falló el registro de las votaciones de la votación #${
+              `Falló el registro de los votos de la votación #${
                 originalVoting.id
               }`
             );
