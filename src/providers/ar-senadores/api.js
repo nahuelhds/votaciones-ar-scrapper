@@ -1,10 +1,5 @@
 import { post } from "services/http";
-import {
-  getFilesFromFolder,
-  getContentsFromFile,
-  getDataFromFile,
-  DOWNLOAD_PATH
-} from "services/fs";
+import { getContentsFromFile, getDataFromFile } from "services/fs";
 import logger from "services/logger";
 
 const API_ENDPOINT = "api/import/ar/senators";
@@ -53,29 +48,26 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
 
         if (SAVE_VOTES) {
           const voting = await votingResponse.json();
-          const votesEndpoint = `${API_ENDPOINT}/votings/${voting.id}/votes`;
-          const votesFiles = getFilesFromFolder(
-            `${DOWNLOAD_PATH}/senadores/votos/${year}`
+          const votesEndpoint = `${API_ENDPOINT}/voting/${voting.id}/votes`;
+          const votes = JSON.parse(
+            getContentsFromFile(
+              `/senadores/votos/${year}/${originalVoting.id}.json`
+            )
           );
-          for (const file of votesFiles) {
-            const votes = JSON.parse(
-              getContentsFromFile(`/senadores/votos/${year}/${file}`)
-            );
-            const votesResponse = await post(votesEndpoint, votes);
-            logger.info(
-              votesResponse.status,
-              votesResponse.statusText,
-              originalVoting.id,
-              votesEndpoint
-            );
+          const votesResponse = await post(votesEndpoint, votes);
+          logger.info(
+            votesResponse.status,
+            votesResponse.statusText,
+            originalVoting.id,
+            votesEndpoint
+          );
 
-            if (votesResponse.status >= 400) {
-              logger.warn(
-                `Falló el registro de las votaciones de la votación #${
-                  originalVoting.id
-                }`
-              );
-            }
+          if (votesResponse.status >= 400) {
+            logger.warn(
+              `Falló el registro de las votaciones de la votación #${
+                originalVoting.id
+              }`
+            );
           }
         }
       } catch (err) {
