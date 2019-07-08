@@ -1,11 +1,11 @@
 import { post } from "services/http";
-import { getContentFromFileInFolder, getDataFromFile } from "services/fs";
+import { getDataFromFile, getContentsFromFile } from "services/fs";
 import logger from "services/logger";
 
 const API_ENDPOINT = "api/import/ar/deputies";
 
 const SAVE_RECORDS = true;
-const SAVE_VOTES = false;
+const SAVE_VOTES = true;
 
 /**
  * Sincroniza la información de todas las votaciones
@@ -74,20 +74,27 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
 
         if (SAVE_VOTES) {
           const votesEndpoint = `${API_ENDPOINT}/voting/${voting.id}/votes`;
-          const votesResponse = await post(
-            votesEndpoint,
-            getContentFromFileInFolder(`diputados/votos/${originalVoting.id}`)
+          const originalVotes = JSON.parse(
+            getContentsFromFile(
+              `diputados/votos/${year}/${originalVoting.id}.json`
+            )
           );
+          const votesResponse = await post(votesEndpoint, originalVotes);
+          const votes = await votesResponse.json();
           logger.info(
-            votesResponse.status,
-            votesResponse.statusText,
-            originalVoting.id,
-            votesEndpoint
+            [
+              votesResponse.status,
+              votesResponse.statusText,
+              originalVoting.id,
+              voting.id,
+              votes.length,
+              votesEndpoint
+            ].join(" ")
           );
 
           if (votesResponse.status >= 400) {
             logger.error(
-              `Falló el registro de las votaciones de la votación #${
+              `Falló el registro de los votos de la votación #${
                 originalVoting.id
               }`
             );
