@@ -20,9 +20,14 @@ export const sendYear = async (year, onlyTheseVotings = []) => {
   const votings = getDataFromFile(`senadores/${year}.json`);
   for (let originalVoting of votings) {
     if (
-      ["AFIRMATIVO", "NEGATIVO", "EMPATE", "LEV. VOT."].indexOf(
-        originalVoting.result
-      ) > -1
+      [
+        "AFIRMATIVO",
+        "NEGATIVO",
+        "EMPATE",
+        "LEV. VOT.",
+        "CANCELADA LEV.VOT.",
+        "AUSENTE"
+      ].indexOf(originalVoting.result) > -1
     ) {
       if (
         onlyTheseVotings.length &&
